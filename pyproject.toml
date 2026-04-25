@@ -1,0 +1,6 @@
+[project]
+name = "agent-harness-cli-example"
+version = "0.1.1"
+description = "Example workspace that uses the agent-harness CLI to validate a 1000-character argumentative essay."
+requires-python = ">=3.11"
+dependencies = []
