@@ -1,6 +1,6 @@
 {
   "id": "thousand_char_argument_essay",
-  "description": "Validate an argumentative essay whose length must be 1000 characters plus or minus 10.",
+  "description": "Validate an argumentative essay whose length must be 1000 characters",
   "artifacts": [
     {
       "name": "essay",
@@ -17,18 +17,18 @@
       "config": {
         "artifact": "essay",
         "target_chars": 1000,
-        "tolerance": 10,
+        "tolerance": 0,
         "count_mode": "non_whitespace"
       }
     },
     {
       "name": "essay_quality",
       "command": ["{python}", "checks/check_llm_content.py"],
-      "severity": "warning",
+      "severity": "error",
       "config": {
         "artifact": "essay",
         "checklist": "checklists/essay_quality.md",
-        "reasoning_effort": "low"
+        "reasoning_effort": "medium"
       }
     }
   ]

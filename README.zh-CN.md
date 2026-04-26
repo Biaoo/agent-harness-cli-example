@@ -45,7 +45,7 @@ harness 会运行两个检查：
 | 要求 | Check | 类型 | 严重性 | 要求来源 |
 | --- | --- | --- | --- | --- |
 | 文章长度为 1000 字符，允许正负 10 字符误差。 | `essay_length` | 确定性脚本 | `error` | `task.json` 中的长度配置 |
-| 文章满足论证质量 rubric。 | `essay_quality` | 本地 Codex checklist judge | `warning` | `checklists/essay_quality.md` |
+| 文章满足论证质量 rubric，包括使用一个今年的时事例子。 | `essay_quality` | 本地 Codex checklist judge | `error` | `checklists/essay_quality.md` |
 
 内容要求放在 Markdown checklist 中。LLM judge 填写 checklist，check 脚本再把 `- [x]` 和 `- [ ]` 解析成 harness JSON。这样最终机器协议仍然是确定性的，同时避免强迫模型直接输出严格 JSON。
 
@@ -72,6 +72,7 @@ npm install -g @openai/codex@0.125.0
 ```text
 Write an argumentative essay about "preserving deep thinking in the age of efficiency".
 Save it to essay.md. The essay must be 1000 characters, with an allowed deviation of no more than 10 characters.
+Use the project checklist as the content acceptance criteria.
 ```
 
 当 Codex 准备停止时，`.codex/hooks.json` 中的项目级 Stop hook 会运行：

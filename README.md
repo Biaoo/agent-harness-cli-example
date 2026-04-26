@@ -58,7 +58,7 @@ The harness runs two checks:
 | Requirement | Check | Type | Severity | Source of truth |
 | --- | --- | --- | --- | --- |
 | The essay is 1000 characters plus or minus 10. | `essay_length` | deterministic script | `error` | `task.json` length config |
-| The essay satisfies the argument-quality rubric. | `essay_quality` | local Codex checklist judge | `warning` | `checklists/essay_quality.md` |
+| The essay satisfies the argument-quality rubric, including use of a current-year current-events example. | `essay_quality` | local Codex checklist judge | `error` | `checklists/essay_quality.md` |
 
 Content requirements live in the Markdown checklist. The LLM judge fills the
 checklist, and the check script parses `- [x]` and `- [ ]` into harness JSON.
@@ -90,6 +90,7 @@ Start a Codex session in this directory and ask:
 ```text
 Write an argumentative essay about "preserving deep thinking in the age of efficiency".
 Save it to essay.md. The essay must be 1000 characters, with an allowed deviation of no more than 10 characters.
+Use the project checklist as the content acceptance criteria.
 ```
 
 When Codex attempts to stop, the project-level Stop hook in `.codex/hooks.json`

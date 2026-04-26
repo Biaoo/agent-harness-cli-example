@@ -18,6 +18,12 @@
   Reason:
   Suggestion:
 
+- [ ] item_id: current_year_evidence
+  Criterion: The essay uses at least one concrete current-year current-events example to support the argument. The example should name a specific event, public debate, policy, product, research development, or widely reported trend from the current year, and explain how it supports preserving deep thinking in the age of efficiency.
+  Evidence:
+  Reason:
+  Suggestion:
+
 - [ ] item_id: counterargument_or_tension
   Criterion: The essay responds to an opposing view, a plausible concern, or the complexity that efficiency also has real value.
   Evidence:
