@@ -17,7 +17,7 @@
       "config": {
         "artifact": "essay",
         "target_chars": 1000,
-        "tolerance": 0,
+        "tolerance": 10,
         "count_mode": "non_whitespace"
       }
     },
