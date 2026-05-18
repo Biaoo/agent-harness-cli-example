@@ -1,7 +1,7 @@
 # Analysis Deep Quality Checklist
 
 - [ ] item_id: explanatory_pattern
-  Criterion: The result explains something about the AI information environment rather than only describing a distribution or reporting a metric.
+  Criterion: The result explains something about the target phenomenon's information, governance, or causal environment rather than only describing a distribution or reporting a metric.
   Evidence:
   Reason:
   Suggestion:
