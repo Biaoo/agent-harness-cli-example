@@ -23,6 +23,7 @@ Results Architecture
 Figures + Manuscript
 Reader / Evidence Audit
 Submission Package
+Strict Paper Review
 Final Quality Review
 Research Complete
 ```
@@ -130,7 +131,7 @@ workflow 使用四层 gate：
 | Structure | 确认 active artifact 存在、必需标题齐全，并达到最低内容量。 | `check_markdown_sections.py` |
 | Stage semantics | 判断阶段是否真的完成，`Status:` 是否有证据支撑。 | `check_research_checklist.py` + `checklists/research/stage/*.md` |
 | Deep research quality | 检查研究对象建模、真实信息增量、方法-claim 匹配、数据来源可复现性、证据边界、反解释、图表质量、出版式主文和主文承载力。 | `check_research_checklist.py` + `checklists/research/deep/*.md` |
-| Evidence controls | 强制 source evidence pack、data fitness matrix、claim-evidence trace、真实生成的图表资产、读者可解析的引用/References、claim 强度校准、引用链完整性、overclaim review 和最终质量报告。 | `check_research_csv_contract.py`, `check_research_trace_links.py`, `check_research_figure_assets.py`, `check_research_manuscript_publication_style.py`, 专用 checklists |
+| Evidence controls | 强制 source evidence pack、data fitness matrix、claim-evidence trace、真实生成的图表资产、读者可解析的引用/References、严格审稿 scorecard、claim 强度校准、引用链完整性、overclaim review 和最终质量报告。 | `check_research_csv_contract.py`, `check_research_trace_links.py`, `check_research_figure_assets.py`, `check_research_manuscript_publication_style.py`, `check_research_review_scorecard.py`, 专用 checklists |
 
 workflow 使用这些 check 脚本：
 
@@ -144,6 +145,7 @@ workflow 使用这些 check 脚本：
 | `check_research_figure_assets.py` | 检查生成的图表资产是否存在于主题 figures 目录，并被 manuscript 引用。 | `figure_manifest.csv`, `manuscript.md` |
 | `check_research_manuscript_form.py` | 检查 manuscript 是否是论文式展开，而不是 memo bullets 或 Figure Plan。 | `manuscript.md` |
 | `check_research_manuscript_publication_style.py` | 检查主文是否泄露 harness 内部信息，并要求出版式引用、References 和命名结果小节。 | `manuscript.md` |
+| `check_research_review_scorecard.py` | 检查严格审稿 scorecard、评分阈值、修复路由和 accept/revision 一致性。 | `strict_paper_review.md`, `reviewer_scorecard.csv` |
 | `check_research_checklist.py` | 调用本地 `codex exec` 填写 Markdown checklist，再把 checked/unchecked items 解析成 harness JSON。 | `checklists/research/` |
 
 workflow graph 负责路由。结构和状态检查是确定性的。Checklist checks 是语义质量 gate；只有做 deterministic-only 调试时才设置 `AGENT_HARNESS_ENABLE_LLM=0`。
@@ -170,6 +172,7 @@ checks/
   check_research_manuscript_form.py  论文式正文形态检查。
   check_research_manuscript_publication_style.py
                                       读者可见主文风格检查。
+  check_research_review_scorecard.py 严格审稿 scorecard 检查。
   check_research_checklist.py        Markdown checklist 语义/深层质量 gate。
   local_codex_judge.py               本地 Codex checklist judge helper。
   research_paths.py                  共享主题路径解析器。

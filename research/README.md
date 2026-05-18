@@ -65,8 +65,8 @@ The workflow does not rely on structure alone. Critical nodes use layered gates:
    and whether the insight can carry a main paper.
 4. Evidence-control checks require auditable source rows, claim-evidence traces,
    data fitness judgments, claim-strength calibration, generated visual assets,
-   reader-facing citations/references, overclaim review, and a final aggregate
-   quality report.
+   reader-facing citations/references, strict reviewer scorecards, overclaim
+   review, and a final aggregate quality report.
 
 Checklist checks call local `codex exec` to fill Markdown checklists from
 `checklists/research/`, then parse the checklist into harness JSON. Set
@@ -275,6 +275,7 @@ Required headings:
 ## Claim Evidence Coverage
 ## Data Fitness and Source Audit
 ## Figure and Manuscript Quality
+## Strict Reviewer Outcome
 ## Residual Risks
 ## External Use Readiness
 ## Status
@@ -308,6 +309,42 @@ Required headings:
 ## Cover Letter
 ## User Authority
 ## Status
+```
+
+`strict_paper_review`
+
+```text
+research/{topic_slug}/strict_paper_review.md
+research/{topic_slug}/reviewer_scorecard.csv
+Status: accept | minor_revision | major_revision | needs_data | reject_rewrite | blocked
+Required headings:
+# Strict Paper Review
+## Reviewer Summary
+## Scorecard
+## Major Concerns
+## Required Revisions
+## Data or Experiment Requests
+## Rewrite Decision
+## Recommendation
+## Status
+Required reviewer_scorecard.csv columns:
+dimension,score,threshold,verdict,rationale,required_action,route
+Required dimensions:
+novelty,literature_positioning,evidence_adequacy,method_validity,analysis_quality,claim_calibration,figures_tables,writing_structure,reproducibility_references
+
+Strict reviewer requirements:
+- Review as a skeptical external paper reviewer, not as the project author.
+- Score every dimension on a 1.0-5.0 scale.
+- Use thresholds of at least 4.0 per dimension and mean score at least 4.2 for
+  `Status: accept`.
+- Use `minor_revision` for text, figure, citation, and package repairs that do
+  not change the core evidence.
+- Use `major_revision` when the result architecture, core framing, or analysis
+  logic must be rebuilt.
+- Use `needs_data` when acceptance requires additional data, experiments,
+  robustness checks, source collection, or empirical evidence.
+- Use `reject_rewrite` when the paper must be rebuilt from the insight direction
+  rather than repaired locally.
 ```
 
 ## Useful Commands

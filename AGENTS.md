@@ -82,8 +82,12 @@ Key evidence-control artifacts:
   claim IDs, source IDs, planned paths, and caption stubs.
 - `figure_manifest.csv`: generated figure/table assets, file paths, generation
   methods, claim IDs, source IDs, captions, and publication status.
+- `strict_paper_review.md` and `reviewer_scorecard.csv`: strict external
+  reviewer report, per-dimension scores, thresholds, verdicts, required actions,
+  and repair routes.
 - `quality_report.md`: final stage outcomes, failed gates and repairs, claim
-  coverage, data/source audit, residual risks, and external-use readiness.
+  coverage, strict reviewer outcome, data/source audit, residual risks, and
+  external-use readiness.
 
 For `figures_manuscript`, do not stop at a `Figure Plan`. Generate actual
 assets under `research/<topic_slug>/figures/`, write `figure_manifest.csv`, and
@@ -99,6 +103,13 @@ mechanics. Do not mention workflow, checks, checklist files, local paths,
 claim IDs, or figure asset IDs in those sections. Put file paths and manifest
 details only in `Figures and Tables`, use reader-facing citations in the body,
 and add `References`.
+
+At `strict_paper_review`, act as a skeptical external reviewer. Do not soften
+major flaws to finish the workflow. Use `Status: accept` only when every
+scorecard dimension reaches threshold and the mean score is high enough. Route
+minor revisions to `figures_manuscript`, major revisions to
+`results_architecture`, missing data or experiments to `data_acquisition`, and
+full rejections to `insight_direction_discovery`.
 
 Content quality checks use local `codex exec` to fill Markdown checklists, then
 the check script parses the checklist into harness JSON. For deterministic-only

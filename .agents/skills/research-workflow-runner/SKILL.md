@@ -46,7 +46,8 @@ workflow.
 10. Maintain evidence-control artifacts when the active stage requires them:
     `source_evidence_pack.csv`, `data_fitness_matrix.csv`,
     `claim_evidence_trace.csv`, `figure_blueprint.csv`,
-    `figure_manifest.csv`, and `quality_report.md`.
+    `figure_manifest.csv`, `strict_paper_review.md`,
+    `reviewer_scorecard.csv`, and `quality_report.md`.
 11. Run or allow the Stop hook to run:
 
 ```bash
@@ -82,5 +83,11 @@ Methods, Results, Discussion, and Conclusion, do not mention workflow, checks,
 checklists, local paths, internal CSV artifact names, source IDs, claim IDs, or
 figure asset IDs. Put manifest paths only in Figures and Tables. Use
 reader-facing citations and include a References section.
+
+At `strict_paper_review`, act as a strict external reviewer. Score novelty,
+literature positioning, evidence adequacy, method validity, analysis quality,
+claim calibration, figures/tables, writing, reproducibility, and references.
+Use `Status: accept` only when all score thresholds are met. If not, route back
+to the stage that can actually repair the issue.
 
 Do not edit workflow specs or checks during normal operation.

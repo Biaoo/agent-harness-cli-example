@@ -1290,9 +1290,9 @@
           "id": "complete_research_package",
           "when": "checks.submission_package_status.metadata.status == \"package_ready\" || checks.submission_package_status.metadata.status == \"submitted_ready\"",
           "action": "advance",
-          "to": "final_quality_review",
-          "label": "进入 Final Quality Review",
-          "prompt": "投稿包已经完整同步。请生成最终质量报告，汇总 gate 历史、证据覆盖、残余风险和外部使用等级。"
+          "to": "strict_paper_review",
+          "label": "进入 Strict Paper Review",
+          "prompt": "投稿包已经完整同步。请以非常严格的论文审稿人视角审稿，生成 strict_paper_review.md 和 reviewer_scorecard.csv。不要为了完成 workflow 而放水；如果需要补数据、补实验、重做分析、重构结果或完全打回重写，请明确给出低分、required action 和路由。只有所有维度达到阈值时才能使用 Status: accept。"
         },
         {
           "id": "request_submission_authority",
@@ -1307,6 +1307,136 @@
           "action": "repeat",
           "label": "修复投稿包",
           "prompt": "投稿包仍有阻断项。请补齐声明、引用、图表、cover letter 或格式。"
+        }
+      ]
+    },
+    {
+      "id": "strict_paper_review",
+      "type": "gate",
+      "title": "Strict Paper Review",
+      "decision_policy": {
+        "mode": "model_choice",
+        "require_reason": true
+      },
+      "artifacts": [
+        {
+          "name": "strict_paper_review",
+          "path": "research/{topic_slug}/strict_paper_review.md",
+          "type": "markdown",
+          "required": true
+        },
+        {
+          "name": "reviewer_scorecard",
+          "path": "research/{topic_slug}/reviewer_scorecard.csv",
+          "type": "csv",
+          "required": true
+        }
+      ],
+      "checks": [
+        {
+          "name": "strict_review_sections",
+          "command": ["{python}", "checks/check_markdown_sections.py"],
+          "severity": "error",
+          "config": {
+            "path": "research/{topic_slug}/strict_paper_review.md",
+            "min_chars": 1800,
+            "required_headings": [
+              "# Strict Paper Review",
+              "## Reviewer Summary",
+              "## Scorecard",
+              "## Major Concerns",
+              "## Required Revisions",
+              "## Data or Experiment Requests",
+              "## Rewrite Decision",
+              "## Recommendation",
+              "## Status"
+            ]
+          }
+        },
+        {
+          "name": "strict_review_status",
+          "command": ["{python}", "checks/check_research_status.py"],
+          "severity": "error",
+          "config": {
+            "path": "research/{topic_slug}/strict_paper_review.md",
+            "allowed_statuses": ["accept", "minor_revision", "major_revision", "needs_data", "reject_rewrite", "blocked"]
+          }
+        },
+        {
+          "name": "strict_review_scorecard",
+          "command": ["{python}", "checks/check_research_review_scorecard.py"],
+          "severity": "error",
+          "config": {
+            "report": "research/{topic_slug}/strict_paper_review.md",
+            "scorecard": "research/{topic_slug}/reviewer_scorecard.csv",
+            "min_rows": 8,
+            "min_accept_mean": 4.2,
+            "min_accept_score": 4.0,
+            "required_dimensions": ["novelty", "literature_positioning", "evidence_adequacy", "method_validity", "analysis_quality", "claim_calibration", "figures_tables", "writing_structure", "reproducibility_references"],
+            "allowed_statuses": ["accept", "minor_revision", "major_revision", "needs_data", "reject_rewrite", "blocked"],
+            "allowed_verdicts": ["pass", "minor_issue", "major_issue", "fatal_issue"],
+            "allowed_routes": ["final_quality_review", "figures_manuscript", "results_architecture", "analysis", "data_acquisition", "research_design", "insight_direction_discovery", "idea_intake", "blocked"]
+          }
+        },
+        {
+          "name": "strict_review_stage_quality",
+          "command": ["{python}", "checks/check_research_checklist.py"],
+          "severity": "error",
+          "config": {
+            "path": "research/{topic_slug}/strict_paper_review.md",
+            "checklist": "checklists/research/stage/strict_paper_review.md",
+            "aspect": "strict_paper_review_stage_quality",
+            "reasoning_effort": "high"
+          }
+        }
+      ],
+      "transitions": [
+        {
+          "id": "accept_strict_review",
+          "when": "checks.strict_review_status.metadata.status == \"accept\"",
+          "action": "advance",
+          "to": "final_quality_review",
+          "label": "严格审稿通过",
+          "prompt": "严格审稿通过，所有评分达到阈值。请进入最终质量报告，汇总 gate 历史、严格审稿结论、证据覆盖、残余风险和外部使用等级。"
+        },
+        {
+          "id": "minor_revision_after_strict_review",
+          "when": "checks.strict_review_status.metadata.status == \"minor_revision\"",
+          "action": "advance",
+          "to": "figures_manuscript",
+          "label": "小修：回正文/图表",
+          "prompt": "严格审稿要求小修。请按 strict_paper_review.md 和 reviewer_scorecard.csv 修复正文、图表、引用、References、claim map 或证据边界，然后重新进入后续 gate。"
+        },
+        {
+          "id": "major_revision_after_strict_review",
+          "when": "checks.strict_review_status.metadata.status == \"major_revision\"",
+          "action": "advance",
+          "to": "results_architecture",
+          "label": "大修：回结果结构",
+          "prompt": "严格审稿要求大修。请回 results architecture，重构论文发现、结果链、图表设计和主张边界；必要时再回 analysis 或 research design。"
+        },
+        {
+          "id": "needs_data_after_strict_review",
+          "when": "checks.strict_review_status.metadata.status == \"needs_data\"",
+          "action": "advance",
+          "to": "data_acquisition",
+          "label": "补数据/补实验",
+          "prompt": "严格审稿认为证据或实验不足。请回 data acquisition，补充数据、来源、实验、稳健性材料或替代证据，再重新分析。"
+        },
+        {
+          "id": "reject_rewrite_after_strict_review",
+          "when": "checks.strict_review_status.metadata.status == \"reject_rewrite\"",
+          "action": "advance",
+          "to": "insight_direction_discovery",
+          "label": "打回重写",
+          "prompt": "严格审稿认为当前论文必须打回重写。请回 insight direction discovery，重构主问题、信息增量、竞争方向和论文主线；不要在原稿上做表面修补。"
+        },
+        {
+          "id": "blocked_strict_review",
+          "when": "checks.strict_review_status.metadata.status == \"blocked\"",
+          "action": "repeat",
+          "label": "修复审稿阻断",
+          "prompt": "严格审稿本身存在阻断项。请修复 strict_paper_review.md 或 reviewer_scorecard.csv，确保评分、required action 和 status 一致。"
         }
       ]
     },
@@ -1337,6 +1467,7 @@
               "## Claim Evidence Coverage",
               "## Data Fitness and Source Audit",
               "## Figure and Manuscript Quality",
+              "## Strict Reviewer Outcome",
               "## Residual Risks",
               "## External Use Readiness",
               "## Status"

@@ -18,6 +18,12 @@
   Reason:
   Suggestion:
 
+- [ ] item_id: strict_reviewer_outcome_summarized
+  Criterion: The report summarizes strict reviewer status, score thresholds, failed dimensions, required repairs, and why the workflow is or is not allowed to finish.
+  Evidence:
+  Reason:
+  Suggestion:
+
 - [ ] item_id: residual_risk_actionable
   Criterion: Residual risks are concrete and tied to repair actions or external-use limits.
   Evidence:
