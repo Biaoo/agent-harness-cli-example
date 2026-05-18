@@ -12,6 +12,12 @@
   Reason:
   Suggestion:
 
+- [ ] item_id: figure_blueprint_argumentative
+  Criterion: The figure/table blueprint specifies concrete assets, generation methods, planned paths, captions, and claim roles instead of only listing possible figures.
+  Evidence:
+  Reason:
+  Suggestion:
+
 - [ ] item_id: evidence_boundary_visible
   Criterion: Evidence boundaries and unresolved limitations are visible in the architecture rather than deferred.
   Evidence:

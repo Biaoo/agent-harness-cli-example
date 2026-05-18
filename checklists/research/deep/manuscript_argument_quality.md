@@ -12,8 +12,14 @@
   Reason:
   Suggestion:
 
+- [ ] item_id: paper_sections_are_developed
+  Criterion: Introduction, Methods, Results, Discussion, and Conclusion are developed as coherent paper prose with transitions, not as memo bullets, result notes, or a figure plan.
+  Evidence:
+  Reason:
+  Suggestion:
+
 - [ ] item_id: figures_serve_claim
-  Criterion: The figure plan assigns each figure a claim-supporting role and avoids figures that only decorate or dump outputs.
+  Criterion: Generated figures and tables are embedded in the manuscript and assigned claim-supporting roles; the manuscript does not pass with only a figure plan.
   Evidence:
   Reason:
   Suggestion:

@@ -860,6 +860,12 @@
           "path": "research/{topic_slug}/results_architecture.md",
           "type": "markdown",
           "required": true
+        },
+        {
+          "name": "figure_blueprint",
+          "path": "research/{topic_slug}/figure_blueprint.csv",
+          "type": "csv",
+          "required": true
         }
       ],
       "checks": [
@@ -874,6 +880,7 @@
               "# Results Architecture",
               "## Results Chain",
               "## Result Modules",
+              "## Figure and Table Blueprint",
               "## Evidence Boundary",
               "## Repair Log",
               "## Status"
@@ -887,6 +894,20 @@
           "config": {
             "path": "research/{topic_slug}/results_architecture.md",
             "allowed_statuses": ["admitted", "repair_needed", "blocked"]
+          }
+        },
+        {
+          "name": "figure_blueprint_contract",
+          "command": ["{python}", "checks/check_research_csv_contract.py"],
+          "severity": "error",
+          "config": {
+            "path": "research/{topic_slug}/figure_blueprint.csv",
+            "min_rows": 2,
+            "required_columns": ["asset_id", "asset_type", "title", "claim_ids", "source_ids", "generation_method", "data_or_prompt_source", "planned_path", "caption_stub"],
+            "allowed_values": {
+              "asset_type": ["figure", "table", "box"],
+              "generation_method": ["python", "imagegen", "manual_svg", "markdown_table"]
+            }
           }
         },
         {
@@ -908,7 +929,7 @@
           "action": "advance",
           "to": "figures_manuscript",
           "label": "进入 Figures + Manuscript",
-          "prompt": "结果链已建立。请把 insight 转为图表和正文。"
+          "prompt": "结果链和图表蓝图已建立。请先生成真实图表资产，再写论文式正文。数据图、矩阵图和对比表优先使用 Python/matplotlib/plotly 等可复现绘图；机制图、概念图或 graphical abstract 可使用 imagegen，但必须保存到 research/<topic_slug>/figures/。同时创建 figure_manifest.csv，正文必须引用每个 asset 的文件路径、caption 和 claim role。"
         },
         {
           "id": "repair_results_architecture",
@@ -944,6 +965,12 @@
           "path": "research/{topic_slug}/manuscript.md",
           "type": "markdown",
           "required": true
+        },
+        {
+          "name": "figure_manifest",
+          "path": "research/{topic_slug}/figure_manifest.csv",
+          "type": "csv",
+          "required": true
         }
       ],
       "checks": [
@@ -953,13 +980,16 @@
           "severity": "error",
           "config": {
             "path": "research/{topic_slug}/manuscript.md",
-            "min_chars": 1600,
+            "min_chars": 9000,
             "required_headings": [
               "# Manuscript Draft",
               "## Abstract",
               "## Introduction",
+              "## Methods",
               "## Results",
-              "## Figure Plan",
+              "## Discussion",
+              "## Conclusion",
+              "## Figures and Tables",
               "## Claim Map",
               "## Evidence Boundaries",
               "## Status"
@@ -973,6 +1003,58 @@
           "config": {
             "path": "research/{topic_slug}/manuscript.md",
             "allowed_statuses": ["drafting", "figures_synced", "needs_repair", "blocked"]
+          }
+        },
+        {
+          "name": "manuscript_paper_form",
+          "command": ["{python}", "checks/check_research_manuscript_form.py"],
+          "severity": "error",
+          "config": {
+            "path": "research/{topic_slug}/manuscript.md",
+            "min_words": 1800,
+            "paragraph_min_chars": 180,
+            "min_figure_refs": 1,
+            "min_table_refs": 1,
+            "max_outline_result_lines": 0,
+            "required_sections": [
+              {"heading": "Introduction", "min_paragraphs": 4},
+              {"heading": "Methods", "min_paragraphs": 3},
+              {"heading": "Results", "min_paragraphs": 6},
+              {"heading": "Discussion", "min_paragraphs": 4},
+              {"heading": "Conclusion", "min_paragraphs": 2}
+            ]
+          }
+        },
+        {
+          "name": "figure_manifest_contract",
+          "command": ["{python}", "checks/check_research_csv_contract.py"],
+          "severity": "error",
+          "config": {
+            "path": "research/{topic_slug}/figure_manifest.csv",
+            "min_rows": 2,
+            "required_columns": ["asset_id", "asset_type", "title", "path", "generation_method", "claim_ids", "source_ids", "caption", "status"],
+            "allowed_values": {
+              "asset_type": ["figure", "table", "box"],
+              "generation_method": ["python", "imagegen", "manual_svg", "markdown_table"],
+              "status": ["generated", "referenced", "needs_repair", "blocked"]
+            }
+          }
+        },
+        {
+          "name": "figure_assets_exist_and_referenced",
+          "command": ["{python}", "checks/check_research_figure_assets.py"],
+          "severity": "error",
+          "config": {
+            "manifest": "research/{topic_slug}/figure_manifest.csv",
+            "manuscript": "research/{topic_slug}/manuscript.md",
+            "asset_dir": "research/{topic_slug}/figures",
+            "min_assets": 2,
+            "min_figures": 1,
+            "min_tables": 1,
+            "min_file_bytes": 64,
+            "allowed_asset_types": ["figure", "table", "box"],
+            "allowed_generation_methods": ["python", "imagegen", "manual_svg", "markdown_table"],
+            "publishable_statuses": ["generated", "referenced"]
           }
         },
         {
@@ -1012,6 +1094,17 @@
           }
         },
         {
+          "name": "figure_asset_deep_quality",
+          "command": ["{python}", "checks/check_research_checklist.py"],
+          "severity": "error",
+          "config": {
+            "path": "research/{topic_slug}/figure_manifest.csv",
+            "checklist": "checklists/research/deep/figure_asset_quality.md",
+            "aspect": "figure_asset_deep_quality",
+            "reasoning_effort": "high"
+          }
+        },
+        {
           "name": "manuscript_overclaim_review",
           "command": ["{python}", "checks/check_research_checklist.py"],
           "severity": "error",
@@ -1037,7 +1130,7 @@
           "when": "checks.manuscript_status.metadata.status == \"drafting\" || checks.manuscript_status.metadata.status == \"needs_repair\" || checks.manuscript_status.metadata.status == \"blocked\"",
           "action": "repeat",
           "label": "修正文稿和图表",
-          "prompt": "请继续修复正文、图表、claim map 或证据边界。"
+          "prompt": "请继续修复正文、图表、claim map 或证据边界。不要只写 Figure Plan；必须生成 figure_manifest.csv 中列出的图表文件，并把正文扩展为论文式叙述。"
         }
       ]
     },
@@ -1215,6 +1308,7 @@
               "## Failed Gates and Repairs",
               "## Claim Evidence Coverage",
               "## Data Fitness and Source Audit",
+              "## Figure and Manuscript Quality",
               "## Residual Risks",
               "## External Use Readiness",
               "## Status"

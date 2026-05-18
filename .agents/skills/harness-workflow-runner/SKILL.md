@@ -40,7 +40,8 @@ workflow.
    research gates to run deeper quality checklists.
 10. Maintain evidence-control artifacts when the active stage requires them:
     `source_evidence_pack.csv`, `data_fitness_matrix.csv`,
-    `claim_evidence_trace.csv`, and `quality_report.md`.
+    `claim_evidence_trace.csv`, `figure_blueprint.csv`,
+    `figure_manifest.csv`, and `quality_report.md`.
 11. Run or allow the Stop hook to run:
 
 ```bash
@@ -63,5 +64,12 @@ blocks, repair the research logic rather than only editing prose.
 Do not make unsupported claim-strength jumps. If the trace only supports a
 mechanism claim, do not write causal, market-share, price, or supplier-selection
 claims in the manuscript.
+
+At `figures_manuscript`, generate real figure/table assets before setting
+`Status: figures_synced`. Save them under `research/<topic_slug>/figures/`,
+write `figure_manifest.csv`, and cite each asset ID/title/path in
+`manuscript.md`. Prefer Python for data-derived visuals and computed tables.
+Use imagegen only for conceptual mechanism visuals or graphical abstracts where
+exact numeric fidelity is not required.
 
 Do not edit workflow specs or checks during normal operation.

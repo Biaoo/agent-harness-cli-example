@@ -12,6 +12,12 @@
   Reason:
   Suggestion:
 
+- [ ] item_id: figure_asset_coverage_summarized
+  Criterion: The report summarizes generated figure/table assets, their methods, manuscript references, and any visual-evidence limitations.
+  Evidence:
+  Reason:
+  Suggestion:
+
 - [ ] item_id: residual_risk_actionable
   Criterion: Residual risks are concrete and tied to repair actions or external-use limits.
   Evidence:

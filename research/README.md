@@ -61,10 +61,11 @@ The workflow does not rely on structure alone. Critical nodes use layered gates:
    whether the artifact can honestly enter the next stage.
 3. Deep quality checklist checks verify research-object modeling, true
    information delta, method-claim fit, data provenance, evidence boundaries,
-   alternative explanations, and whether the insight can carry a main paper.
+   alternative explanations, real figure/table assets, and whether the insight
+   can carry a main paper.
 4. Evidence-control checks require auditable source rows, claim-evidence traces,
-   data fitness judgments, claim-strength calibration, overclaim review, and a
-   final aggregate quality report.
+   data fitness judgments, claim-strength calibration, generated visual assets,
+   overclaim review, and a final aggregate quality report.
 
 Checklist checks call local `codex exec` to fill Markdown checklists from
 `checklists/research/`, then parse the checklist into harness JSON. Set
@@ -202,14 +203,18 @@ Required headings:
 
 ```text
 research/{topic_slug}/results_architecture.md
+research/{topic_slug}/figure_blueprint.csv
 Status: admitted | repair_needed | blocked
 Required headings:
 # Results Architecture
 ## Results Chain
 ## Result Modules
+## Figure and Table Blueprint
 ## Evidence Boundary
 ## Repair Log
 ## Status
+Required figure_blueprint.csv columns:
+asset_id,asset_type,title,claim_ids,source_ids,generation_method,data_or_prompt_source,planned_path,caption_stub
 ```
 
 `figures_manuscript`
@@ -217,16 +222,32 @@ Required headings:
 ```text
 research/{topic_slug}/manuscript.md
 research/{topic_slug}/claim_evidence_trace.csv
+research/{topic_slug}/figure_manifest.csv
+research/{topic_slug}/figures/
 Status: drafting | figures_synced | needs_repair | blocked
 Required headings:
 # Manuscript Draft
 ## Abstract
 ## Introduction
+## Methods
 ## Results
-## Figure Plan
+## Discussion
+## Conclusion
+## Figures and Tables
 ## Claim Map
 ## Evidence Boundaries
 ## Status
+Required figure_manifest.csv columns:
+asset_id,asset_type,title,path,generation_method,claim_ids,source_ids,caption,status
+
+Figure/table requirements:
+- Save generated assets under `research/{topic_slug}/figures/`.
+- Use `python` for data-derived figures, matrices, charts, and computed tables.
+- Use `imagegen` only for conceptual mechanism figures, graphical abstracts, or
+  non-numeric explanatory visuals.
+- Reference every manifest `asset_id`, title, and file path in the manuscript.
+- A manuscript cannot pass with only a `Figure Plan`; it must include actual
+  generated assets and paper-style prose.
 ```
 
 `final_quality_review`
@@ -240,6 +261,7 @@ Required headings:
 ## Failed Gates and Repairs
 ## Claim Evidence Coverage
 ## Data Fitness and Source Audit
+## Figure and Manuscript Quality
 ## Residual Risks
 ## External Use Readiness
 ## Status

@@ -12,6 +12,12 @@
   Reason:
   Suggestion:
 
+- [ ] item_id: visual_evidence_readable
+  Criterion: The audit checks whether generated figures and tables make the claim easier to evaluate, including captions, references, and visual boundaries.
+  Evidence:
+  Reason:
+  Suggestion:
+
 - [ ] item_id: belief_threshold_met
   Criterion: The audit explains why a skeptical reader should believe the claim, or routes back when the threshold is not met.
   Evidence:

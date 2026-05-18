@@ -1,7 +1,7 @@
 # Submission Package Stage Checklist
 
 - [ ] item_id: manuscript_figure_reference_alignment
-  Criterion: The package links manuscript, figures, references, declarations, and cover letter decisions without dangling or inconsistent items.
+  Criterion: The package links manuscript, generated figure/table files, figure_manifest.csv, references, declarations, and cover letter decisions without dangling or inconsistent items.
   Evidence:
   Reason:
   Suggestion:
