@@ -1,130 +1,150 @@
-# Agent Harness CLI Example
+# Agent Harness CLI Research Workflow Example
 
 [English](README.md) | [简体中文](README.zh-CN.md)
 
-一个使用 `agent-harness-cli` 参考模式的最小 Codex 写作任务。
+本仓库是 [Biaoo/agent-harness-cli](https://github.com/Biaoo/agent-harness-cli) 的可运行示例，演示 workflow controller 模式如何驱动一个 AI-IE 研究任务，通过显式状态、checks、路由决策和 Codex Stop hook continuation 完成长流程控制。
 
-本仓库是 [Biaoo/agent-harness-cli](https://github.com/Biaoo/agent-harness-cli) 的可运行示例。它用“写一篇议论文”作为 artifact，演示这个实用参考框架如何作用于 agentic 写作任务：Codex 生成文章，项目级 hook 运行检查，报告再指导下一轮修改。
+这个仓库现在只保留 research workflow 示例。
+
+## Workflow 目标
+
+workflow 将一个粗略的 AI-IE research idea 推进成完整研究交付包：
+
+```text
+Idea Intake
+World Knowledge Map
+Insight Direction Discovery
+Research Design
+Data Acquisition
+Analysis
+Insight Verification
+Results Architecture
+Figures + Manuscript
+Reader / Evidence Audit
+Submission Package
+Research Complete
+```
+
+核心路由规则是：
+
+```text
+要么产生主文级 insight，要么回炉修复。
+不走 SI-only 消化、不做降级发表、不把弱结果包装成 fallback paper。
+```
 
 ## Harness Engineering Flow
 
-示例里的 artifact 是一篇短文，但重点是围绕 artifact 建立验收循环：
-
-1. Codex 写入 `essay.md`。
-2. 项目级 Stop hook 运行 `agent-harness`。
-3. harness 执行确定性检查和 LLM 辅助检查。
-4. blocking failure 会作为 continuation prompt 返回给 Codex。
-5. Codex 修改 artifact，并重新进入检查循环，直到 blocking check 通过。
-
-这展示了 harness engineering 在 agentic 工作中面向 artifact 的作用：让目标可约束、可观测、可验证；把验收标准外部化；并让 Agent 根据证据迭代。
-
-同样的模式可以复用于项目文档、规格说明、研究笔记、代码修改、数据报告，以及其他需要 Agent 友好验收的 artifact。
-
-这个示例也保持和 CLI 相同的边界：框架提供循环，项目自己负责 artifact 契约、checklist、check 脚本和 LLM judge 行为。
-
-## 这个示例应该学到什么
-
-- artifact 契约是明确的：Codex 必须写入 `essay.md`。
-- 客观要求变成确定性检查，例如精确长度。
-- 语义要求放在人类可读的 checklist 中。
-- LLM judge 填写 checklist，而不是直接生成最终 harness JSON。
-- check 脚本把 checklist 解析成确定性的 harness 输出。
-- blocking check 失败时，Stop hook 会把失败报告变成 Codex 的下一轮提示。
-
-## 相关项目
-
-- CLI 和 skill 源码：[Biaoo/agent-harness-cli](https://github.com/Biaoo/agent-harness-cli)
-- 本仓库演示已发布的 `agent-harness-cli` 包，以及 Codex Stop hook 工作流。
-
-## 验收面
-
-任务要求 Codex 写一篇关于“在效率时代保持深度思考”的议论文。
-
-harness 会运行两个检查：
-
-| 要求 | Check | 类型 | 严重性 | 要求来源 |
-| --- | --- | --- | --- | --- |
-| 文章长度为 1000 字符，允许正负 10 字符误差。 | `essay_length` | 确定性脚本 | `error` | `task.json` 中的长度配置 |
-| 文章满足论证质量 rubric，包括使用一个今年的时事例子。 | `essay_quality` | 本地 Codex checklist judge | `error` | `checklists/essay_quality.md` |
-
-内容要求放在 Markdown checklist 中。LLM judge 填写 checklist，check 脚本再把 `- [x]` 和 `- [ ]` 解析成 harness JSON。这样最终机器协议仍然是确定性的，同时避免强迫模型直接输出严格 JSON。
-
-## 前置条件
-
-| 工具 | 要求版本 | 用途 | 验证方式 |
-| --- | --- | --- | --- |
-| `uv` | `0.9.3` | 通过 `uvx` 运行已发布的 `agent-harness-cli` 包。 | `uv --version` |
-| `agent-harness-cli` | `0.1.1` | 提供 `agent-harness run-checks` 和 `agent-harness view`。 | hook 固定使用 `uvx --from agent-harness-cli==0.1.1 ...`，不需要全局安装。 |
-| Codex CLI | `codex-cli 0.125.0` | 通过 `codex exec` 运行本地 LLM checklist judge。 | `codex --version` |
-
-如果 Codex CLI 是通过 npm 安装的：
-
-```bash
-npm install -g @openai/codex@0.125.0
-```
-
-质量 checklist check 会调用 `codex exec`，所以 Codex CLI 还需要在本目录中可以非交互运行并已登录。本示例验证环境为 Node.js `v22.22.2` 和 npm `10.9.7`。
+1. Codex 修改 `research/ai-ie/` 下当前 active 节点要求的研究 artifact。
+2. 项目级 Stop hook 运行 `agent-harness step`。
+3. workflow controller 验收当前 active node 的 artifact 结构和 `Status:` 值。
+4. 节点未通过时，hook block，并告诉 Codex 需要修复什么。
+5. 节点通过且只有一个 transition 匹配时，workflow state 自动推进，并用 block 提示下一阶段。
+6. 多个 transition 同时匹配时，state 进入 `choosing`；Codex 需要查看 `agent-harness options` 并运行 `agent-harness choose`。
+7. 只有进入 terminal workflow node 后，Stop hook 才不再 block。
 
 ## 试运行
 
 在本目录启动 Codex session，并输入：
 
 ```text
-Write an argumentative essay about "preserving deep thinking in the age of efficiency".
-Save it to essay.md. The essay must be 1000 characters, with an allowed deviation of no more than 10 characters.
-Use the project checklist as the content acceptance criteria.
+Research this idea with the AI-IE research workflow:
+
+<你的研究想法>
 ```
 
-当 Codex 准备停止时，`.codex/hooks.json` 中的项目级 Stop hook 会运行：
+`AGENTS.md` 已经包含项目级 workflow 操作规则，所以用户不需要在提示词里重复粘贴 workflow 协议。
+
+当 Codex 准备停止时，`.codex/hooks.json` 会运行：
 
 ```bash
-uvx --from agent-harness-cli==0.1.1 agent-harness run-checks --task task.json --report-id latest
+bash "$(git rev-parse --show-toplevel)/.codex/hooks/run-agent-harness-check.sh"
 ```
 
-如果 blocking check 失败，hook 会返回 Codex continuation decision，而不是允许本轮结束。Codex 应读取生成的报告、修改 artifact、重新运行 harness，并且只在 blocking check 通过后结束。
-
-## 查看报告
-
-报告会写入 `reports/`。
-
-查看最新报告：
+该脚本调用：
 
 ```bash
-uvx --from agent-harness-cli==0.1.1 agent-harness view latest --page-size 2
+agent-harness step --task workflows/ai-ie-research.json --report-id research-latest --hook-json
 ```
 
-只查看失败检查：
+hook 会优先使用已安装的 `agent-harness`，否则回退到：
 
 ```bash
-uvx --from agent-harness-cli==0.1.1 agent-harness view latest --failed-only --page-size 5
+uvx --from agent-harness-cli==0.1.2 agent-harness
 ```
 
-手动只运行确定性检查：
+## 常用命令
+
+验证 workflow：
 
 ```bash
-AGENT_HARNESS_ENABLE_LLM=0 uvx --from agent-harness-cli==0.1.1 agent-harness run-checks --task task.json --report-id deterministic
+agent-harness validate-workflow --task workflows/ai-ie-research.json
 ```
+
+执行一次 workflow step：
+
+```bash
+agent-harness step --task workflows/ai-ie-research.json --hook-json
+```
+
+查看 state：
+
+```bash
+agent-harness status --state .agent-harness/ai-ie-research-state.json
+```
+
+查看并选择 model-choice transition：
+
+```bash
+agent-harness options --state .agent-harness/ai-ie-research-state.json
+agent-harness choose <transition-id> --state .agent-harness/ai-ie-research-state.json --reason "why this route is appropriate"
+```
+
+查看最新 workflow report：
+
+```bash
+agent-harness view research-latest --report-dir reports/research-workflow --failed-only
+```
+
+## 验收面
+
+workflow 使用两个确定性 check 脚本：
+
+| Check | 作用 | 要求来源 |
+| --- | --- | --- |
+| `check_markdown_sections.py` | 检查当前 Markdown artifact 是否存在、是否包含必需标题、内容是否达到最低信息量。 | `workflows/ai-ie-research.json` |
+| `check_research_status.py` | 读取 artifact 中的 `Status: <value>`，并把它作为 `metadata.status` 提供给 transition 条件。 | `workflows/ai-ie-research.json` |
+
+workflow graph 负责路由。check 脚本保持窄而确定。
 
 ## 项目结构
 
 ```text
+AGENTS.md                            Codex 项目级操作说明。
+.agents/
+  skills/harness-workflow-runner/    项目级 workflow runner skill。
 .codex/
   hooks.json                         项目级 Stop hook 配置。
-  hooks/run-agent-harness-check.sh   运行 harness 的 hook 脚本。
-checklists/
-  essay_quality.md                   人类可读的内容 checklist。
+  hooks/run-agent-harness-check.sh   workflow Stop hook 入口。
 checks/
-  check_length.py                    确定性长度检查。
-  check_llm_content.py               基于 checklist 的内容检查。
-  local_codex_judge.py               本示例自有的 local codex exec helper。
-task.json                            Harness task 定义。
-essay.md                             生成 artifact，由 Codex 在任务中创建。
+  check_markdown_sections.py         Markdown artifact 结构检查。
+  check_research_status.py           workflow 路由状态检查。
+workflows/
+  ai-ie-research.json                研究 workflow graph。
+research/
+  ai-ie/README.md                    artifact 契约和允许状态。
+pyproject.toml                       示例包元数据。
+```
+
+运行时生成文件会被忽略：
+
+```text
+.agent-harness/
+reports/
 ```
 
 ## 设计说明
 
-- 示例通过 `uvx` 直接使用已发布的 PyPI 包。
-- 不依赖相邻 checkout，也不使用 editable 本地依赖。
-- Stop hook 对 blocking failure 使用 `decision: "block"`，让 Codex 继续工作。
-- LLM 相关逻辑放在示例自己的 check 脚本中，而不是 CLI 中。
-- `reports/` 是生成产物，不应提交。
+- 示例把领域逻辑留在 workspace：workflow spec、artifact contract 和 check scripts。
+- CLI 负责状态控制、验收、报告、transition 应用和 hook JSON。
+- Stop hook 在 workflow 到达 `research_complete` 之前始终返回 `decision: "block"`。
+- 示例无额外依赖，check 脚本只使用 Python 标准库。

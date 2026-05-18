@@ -1,0 +1,812 @@
+{
+  "id": "ai_ie_main_insight_research",
+  "version": 1,
+  "description": "A main-text-insight research workflow for an AI-IE research task. The workflow either advances toward a publishable main insight or routes back for repair; it does not support SI-only digestion or downgrade publication.",
+  "initial": "idea_intake",
+  "defaults": {
+    "state_path": ".agent-harness/ai-ie-research-state.json",
+    "report_dir": "reports/research-workflow"
+  },
+  "nodes": [
+    {
+      "id": "idea_intake",
+      "type": "stage",
+      "title": "Idea Intake",
+      "artifacts": [
+        {
+          "name": "idea_brief",
+          "path": "research/ai-ie/idea_brief.md",
+          "type": "markdown",
+          "required": true
+        }
+      ],
+      "checks": [
+        {
+          "name": "idea_brief_sections",
+          "command": ["{python}", "checks/check_markdown_sections.py"],
+          "severity": "error",
+          "config": {
+            "path": "research/ai-ie/idea_brief.md",
+            "min_chars": 900,
+            "required_headings": [
+              "# Idea Brief",
+              "## World Phenomenon",
+              "## Research Question",
+              "## Idea Anchor",
+              "## Scope Boundary",
+              "## Status"
+            ]
+          }
+        },
+        {
+          "name": "idea_intake_status",
+          "command": ["{python}", "checks/check_research_status.py"],
+          "severity": "error",
+          "config": {
+            "path": "research/ai-ie/idea_brief.md",
+            "allowed_statuses": ["clarified", "too_broad", "needs_user_authority"]
+          }
+        }
+      ],
+      "transitions": [
+        {
+          "id": "map_world_knowledge",
+          "when": "checks.idea_intake_status.metadata.status == \"clarified\"",
+          "action": "advance",
+          "to": "world_knowledge_map",
+          "label": "进入 World Knowledge Map",
+          "prompt": "idea 已经收敛。请构建已有研究解释边界、空白和争议的知识地图。"
+        },
+        {
+          "id": "narrow_idea",
+          "when": "checks.idea_intake_status.metadata.status == \"too_broad\"",
+          "action": "repeat",
+          "label": "收窄 idea",
+          "prompt": "idea 仍然过宽。请重写 idea_brief.md，收窄现象、对象、机制和边界后再次验收。"
+        },
+        {
+          "id": "request_scope_authority",
+          "when": "checks.idea_intake_status.metadata.status == \"needs_user_authority\"",
+          "action": "advance",
+          "to": "user_scope_authority",
+          "label": "请求用户确认范围",
+          "prompt": "idea 需要用户授权或确认边界。请让用户确认后运行 approve/reject。"
+        }
+      ]
+    },
+    {
+      "id": "user_scope_authority",
+      "type": "human_approval",
+      "title": "User Scope Authority",
+      "transitions": [
+        {
+          "id": "scope_approved",
+          "when": "user.approved",
+          "action": "advance",
+          "to": "world_knowledge_map",
+          "label": "用户已确认范围",
+          "prompt": "用户已确认研究边界。请进入 World Knowledge Map。"
+        },
+        {
+          "id": "scope_rejected",
+          "when": "user.rejected",
+          "action": "advance",
+          "to": "idea_intake",
+          "label": "用户要求重写 idea",
+          "prompt": "用户没有确认范围。请回到 Idea Intake 并重写 idea_brief.md。"
+        }
+      ]
+    },
+    {
+      "id": "world_knowledge_map",
+      "type": "stage",
+      "title": "World Knowledge Map",
+      "artifacts": [
+        {
+          "name": "knowledge_map",
+          "path": "research/ai-ie/knowledge_map.md",
+          "type": "markdown",
+          "required": true
+        }
+      ],
+      "checks": [
+        {
+          "name": "knowledge_map_sections",
+          "command": ["{python}", "checks/check_markdown_sections.py"],
+          "severity": "error",
+          "config": {
+            "path": "research/ai-ie/knowledge_map.md",
+            "min_chars": 1400,
+            "required_headings": [
+              "# World Knowledge Map",
+              "## Search Log",
+              "## Literature Matrix",
+              "## What Existing Work Explains",
+              "## What Existing Work Does Not Explain",
+              "## Knowledge Gaps",
+              "## Status"
+            ]
+          }
+        },
+        {
+          "name": "world_map_status",
+          "command": ["{python}", "checks/check_research_status.py"],
+          "severity": "error",
+          "config": {
+            "path": "research/ai-ie/knowledge_map.md",
+            "allowed_statuses": ["searching", "mapped", "partial_coverage", "blocked", "stale"]
+          }
+        }
+      ],
+      "transitions": [
+        {
+          "id": "discover_insight_direction",
+          "when": "checks.world_map_status.metadata.status == \"mapped\"",
+          "action": "advance",
+          "to": "insight_direction_discovery",
+          "label": "进入 insight direction discovery",
+          "prompt": "知识地图已覆盖已有解释和缺口。请寻找候选信息增量。"
+        },
+        {
+          "id": "continue_literature_mapping",
+          "when": "checks.world_map_status.metadata.status == \"searching\" || checks.world_map_status.metadata.status == \"partial_coverage\" || checks.world_map_status.metadata.status == \"stale\"",
+          "action": "repeat",
+          "label": "继续补检索/更新知识地图",
+          "prompt": "资料覆盖仍不足或过期。请补充检索、更新 literature matrix，并再次判断 Status。"
+        },
+        {
+          "id": "record_search_blocker",
+          "when": "checks.world_map_status.metadata.status == \"blocked\"",
+          "action": "repeat",
+          "label": "记录并处理检索阻断",
+          "prompt": "检索被数据库、关键词或权限阻断。请在知识地图中记录 blocker，并尝试替代数据库或缩小范围。"
+        }
+      ]
+    },
+    {
+      "id": "insight_direction_discovery",
+      "type": "gate",
+      "title": "Insight Direction Discovery",
+      "decision_policy": {
+        "mode": "model_choice",
+        "require_reason": true
+      },
+      "artifacts": [
+        {
+          "name": "insight_direction",
+          "path": "research/ai-ie/insight_direction.md",
+          "type": "markdown",
+          "required": true
+        }
+      ],
+      "checks": [
+        {
+          "name": "insight_direction_sections",
+          "command": ["{python}", "checks/check_markdown_sections.py"],
+          "severity": "error",
+          "config": {
+            "path": "research/ai-ie/insight_direction.md",
+            "min_chars": 1200,
+            "required_headings": [
+              "# Insight Direction Discovery",
+              "## Candidate Information Delta",
+              "## Information Delta Spine",
+              "## Why Existing Work Does Not Already Cover It",
+              "## Competing Directions",
+              "## Status"
+            ]
+          }
+        },
+        {
+          "name": "insight_direction_status",
+          "command": ["{python}", "checks/check_research_status.py"],
+          "severity": "error",
+          "config": {
+            "path": "research/ai-ie/insight_direction.md",
+            "allowed_statuses": ["candidate", "promising", "weak", "derivative", "no_delta", "blocked"]
+          }
+        }
+      ],
+      "transitions": [
+        {
+          "id": "design_research",
+          "when": "checks.insight_direction_status.metadata.status == \"candidate\" || checks.insight_direction_status.metadata.status == \"promising\"",
+          "action": "advance",
+          "to": "research_design",
+          "label": "进入 Research Design",
+          "prompt": "候选信息增量成立。请设计能检验这个增量的研究方案。"
+        },
+        {
+          "id": "rebuild_knowledge_map_for_weak_delta",
+          "when": "checks.insight_direction_status.metadata.status == \"weak\"",
+          "action": "advance",
+          "to": "world_knowledge_map",
+          "label": "回知识地图补证据",
+          "prompt": "信息增量较弱，可能是文献覆盖不足。请回到知识地图补充已有研究和缺口判断。"
+        },
+        {
+          "id": "revise_candidate_direction",
+          "when": "checks.insight_direction_status.metadata.status == \"weak\"",
+          "action": "repeat",
+          "label": "保留本阶段并重构候选方向",
+          "prompt": "信息增量较弱，但可能通过重新定义机制或对象修复。请在 insight_direction.md 中重构候选方向。"
+        },
+        {
+          "id": "restart_direction_discovery",
+          "when": "checks.insight_direction_status.metadata.status == \"derivative\" || checks.insight_direction_status.metadata.status == \"no_delta\"",
+          "action": "repeat",
+          "label": "重新构思方向",
+          "prompt": "当前方向没有足够信息增量。请重新寻找能成为主文贡献的方向，不做降级发表路径。"
+        },
+        {
+          "id": "resolve_direction_blocker",
+          "when": "checks.insight_direction_status.metadata.status == \"blocked\"",
+          "action": "repeat",
+          "label": "处理方向发现阻断",
+          "prompt": "方向发现被资料、定义或责任边界阻断。请记录 blocker 并修复后再次验收。"
+        }
+      ]
+    },
+    {
+      "id": "research_design",
+      "type": "stage",
+      "title": "Research Design",
+      "artifacts": [
+        {
+          "name": "research_design",
+          "path": "research/ai-ie/research_design.md",
+          "type": "markdown",
+          "required": true
+        }
+      ],
+      "checks": [
+        {
+          "name": "research_design_sections",
+          "command": ["{python}", "checks/check_markdown_sections.py"],
+          "severity": "error",
+          "config": {
+            "path": "research/ai-ie/research_design.md",
+            "min_chars": 1400,
+            "required_headings": [
+              "# Research Design",
+              "## Research Question",
+              "## Hypothesis or Mechanism",
+              "## Evidence Design",
+              "## Variables and Proxies",
+              "## Identification or Comparison Strategy",
+              "## Data Requirements",
+              "## Status"
+            ]
+          }
+        },
+        {
+          "name": "research_design_status",
+          "command": ["{python}", "checks/check_research_status.py"],
+          "severity": "error",
+          "config": {
+            "path": "research/ai-ie/research_design.md",
+            "allowed_statuses": ["designed", "evidence_needed", "data_needed", "method_uncertain", "infeasible", "ready_for_data"]
+          }
+        }
+      ],
+      "transitions": [
+        {
+          "id": "acquire_data",
+          "when": "checks.research_design_status.metadata.status == \"designed\" || checks.research_design_status.metadata.status == \"ready_for_data\"",
+          "action": "advance",
+          "to": "data_acquisition",
+          "label": "进入 Data Acquisition",
+          "prompt": "研究方案已经清楚。请寻找或构建能支撑该方向的数据。"
+        },
+        {
+          "id": "repair_research_design",
+          "when": "checks.research_design_status.metadata.status == \"evidence_needed\" || checks.research_design_status.metadata.status == \"data_needed\" || checks.research_design_status.metadata.status == \"method_uncertain\"",
+          "action": "repeat",
+          "label": "修正研究设计",
+          "prompt": "研究设计还不够可执行。请修正方法、指标、代理变量或证据链。"
+        },
+        {
+          "id": "return_to_direction_after_infeasible_design",
+          "when": "checks.research_design_status.metadata.status == \"infeasible\"",
+          "action": "advance",
+          "to": "insight_direction_discovery",
+          "label": "回到方向发现",
+          "prompt": "当前设计不可行。请回到方向发现，寻找新的主文级信息增量。"
+        }
+      ]
+    },
+    {
+      "id": "data_acquisition",
+      "type": "stage",
+      "title": "Data Acquisition",
+      "artifacts": [
+        {
+          "name": "data_acquisition",
+          "path": "research/ai-ie/data_acquisition.md",
+          "type": "markdown",
+          "required": true
+        }
+      ],
+      "checks": [
+        {
+          "name": "data_acquisition_sections",
+          "command": ["{python}", "checks/check_markdown_sections.py"],
+          "severity": "error",
+          "config": {
+            "path": "research/ai-ie/data_acquisition.md",
+            "min_chars": 1100,
+            "required_headings": [
+              "# Data Acquisition",
+              "## Source Register",
+              "## Acquisition Log",
+              "## Data Manifest",
+              "## Data Fitness for Research Design",
+              "## Bias or Permission Risks",
+              "## Status"
+            ]
+          }
+        },
+        {
+          "name": "data_acquisition_status",
+          "command": ["{python}", "checks/check_research_status.py"],
+          "severity": "error",
+          "config": {
+            "path": "research/ai-ie/data_acquisition.md",
+            "allowed_statuses": ["searching", "acquired", "substitute_found", "insufficient", "biased", "permission_blocked", "infeasible"]
+          }
+        }
+      ],
+      "transitions": [
+        {
+          "id": "run_analysis",
+          "when": "checks.data_acquisition_status.metadata.status == \"acquired\" || checks.data_acquisition_status.metadata.status == \"substitute_found\"",
+          "action": "advance",
+          "to": "analysis",
+          "label": "进入 Analysis",
+          "prompt": "数据已经可用。请执行分析并记录 run manifest、outputs 和 findings。"
+        },
+        {
+          "id": "continue_data_search",
+          "when": "checks.data_acquisition_status.metadata.status == \"searching\" || checks.data_acquisition_status.metadata.status == \"insufficient\" || checks.data_acquisition_status.metadata.status == \"biased\" || checks.data_acquisition_status.metadata.status == \"permission_blocked\"",
+          "action": "repeat",
+          "label": "继续找数据或替代数据",
+          "prompt": "当前数据不足、偏差过大或存在权限问题。请换数据、缩小问题或找替代数据。"
+        },
+        {
+          "id": "return_to_direction_after_data_infeasible",
+          "when": "checks.data_acquisition_status.metadata.status == \"infeasible\"",
+          "action": "advance",
+          "to": "insight_direction_discovery",
+          "label": "数据不可行，回方向发现",
+          "prompt": "数据无法支撑当前方向。请回到 insight direction discovery，不做降级发表。"
+        }
+      ]
+    },
+    {
+      "id": "analysis",
+      "type": "stage",
+      "title": "Analysis",
+      "decision_policy": {
+        "mode": "model_choice",
+        "require_reason": true
+      },
+      "artifacts": [
+        {
+          "name": "analysis_findings",
+          "path": "research/ai-ie/analysis_findings.md",
+          "type": "markdown",
+          "required": true
+        }
+      ],
+      "checks": [
+        {
+          "name": "analysis_sections",
+          "command": ["{python}", "checks/check_markdown_sections.py"],
+          "severity": "error",
+          "config": {
+            "path": "research/ai-ie/analysis_findings.md",
+            "min_chars": 1300,
+            "required_headings": [
+              "# Analysis Findings",
+              "## Run Manifest",
+              "## Outputs",
+              "## Observed Pattern",
+              "## Robustness or Sensitivity",
+              "## Interpretation",
+              "## Status"
+            ]
+          }
+        },
+        {
+          "name": "analysis_status",
+          "command": ["{python}", "checks/check_research_status.py"],
+          "severity": "error",
+          "config": {
+            "path": "research/ai-ie/analysis_findings.md",
+            "allowed_statuses": ["running", "produced", "robust", "surprising", "null", "noisy", "weak", "failed"]
+          }
+        }
+      ],
+      "transitions": [
+        {
+          "id": "verify_insight",
+          "when": "checks.analysis_status.metadata.status == \"produced\" || checks.analysis_status.metadata.status == \"robust\" || checks.analysis_status.metadata.status == \"surprising\"",
+          "action": "advance",
+          "to": "insight_verification",
+          "label": "进入 Insight Verification",
+          "prompt": "分析产生了可解释 pattern。请验证结果级新意是否真实存在。"
+        },
+        {
+          "id": "repair_analysis_run",
+          "when": "checks.analysis_status.metadata.status == \"running\" || checks.analysis_status.metadata.status == \"noisy\" || checks.analysis_status.metadata.status == \"weak\"",
+          "action": "repeat",
+          "label": "修复分析",
+          "prompt": "分析还不稳定。请修复分析方案、清理输出、增强 robustness 或重跑。"
+        },
+        {
+          "id": "redesign_after_weak_analysis",
+          "when": "checks.analysis_status.metadata.status == \"weak\" || checks.analysis_status.metadata.status == \"null\" || checks.analysis_status.metadata.status == \"failed\"",
+          "action": "advance",
+          "to": "research_design",
+          "label": "回 Research Design",
+          "prompt": "分析未产生可解释 pattern。请回到研究设计修复方法、指标或代理变量。"
+        }
+      ]
+    },
+    {
+      "id": "insight_verification",
+      "type": "gate",
+      "title": "Insight Verification",
+      "decision_policy": {
+        "mode": "model_choice",
+        "require_reason": true
+      },
+      "artifacts": [
+        {
+          "name": "insight_verification",
+          "path": "research/ai-ie/insight_verification.md",
+          "type": "markdown",
+          "required": true
+        }
+      ],
+      "checks": [
+        {
+          "name": "insight_verification_sections",
+          "command": ["{python}", "checks/check_markdown_sections.py"],
+          "severity": "error",
+          "config": {
+            "path": "research/ai-ie/insight_verification.md",
+            "min_chars": 1300,
+            "required_headings": [
+              "# Insight Verification",
+              "## Main-text Insight Claim",
+              "## Novelty Verification",
+              "## Claim Strength",
+              "## Alternative Explanations",
+              "## Reject Downgrade Path",
+              "## Status"
+            ]
+          }
+        },
+        {
+          "name": "insight_verification_status",
+          "command": ["{python}", "checks/check_research_status.py"],
+          "severity": "error",
+          "config": {
+            "path": "research/ai-ie/insight_verification.md",
+            "allowed_statuses": ["confirmed_insight", "weak", "already_known", "derivative", "no_delta", "contradicted", "blocked"]
+          }
+        }
+      ],
+      "transitions": [
+        {
+          "id": "architect_results",
+          "when": "checks.insight_verification_status.metadata.status == \"confirmed_insight\"",
+          "action": "advance",
+          "to": "results_architecture",
+          "label": "进入 Results Architecture",
+          "prompt": "主文级 insight 成立。请组织结果链。"
+        },
+        {
+          "id": "repair_design_for_weak_insight",
+          "when": "checks.insight_verification_status.metadata.status == \"weak\"",
+          "action": "advance",
+          "to": "research_design",
+          "label": "回 Research Design 修证据",
+          "prompt": "新意有潜力但证据不够。请回研究设计修复证据链。"
+        },
+        {
+          "id": "repair_analysis_for_weak_insight",
+          "when": "checks.insight_verification_status.metadata.status == \"weak\"",
+          "action": "advance",
+          "to": "analysis",
+          "label": "回 Analysis 修结果",
+          "prompt": "新意有潜力但结果支撑不足。请回 analysis 修复分析。"
+        },
+        {
+          "id": "restart_direction_after_no_delta",
+          "when": "checks.insight_verification_status.metadata.status == \"already_known\" || checks.insight_verification_status.metadata.status == \"derivative\" || checks.insight_verification_status.metadata.status == \"no_delta\" || checks.insight_verification_status.metadata.status == \"contradicted\"",
+          "action": "advance",
+          "to": "insight_direction_discovery",
+          "label": "回方向发现",
+          "prompt": "没有足够信息增量或方向被推翻。请回方向发现重构主文级 insight。"
+        },
+        {
+          "id": "resolve_verification_blocker",
+          "when": "checks.insight_verification_status.metadata.status == \"blocked\"",
+          "action": "repeat",
+          "label": "处理 insight verification blocker",
+          "prompt": "验证被资料、责任或方法边界阻断。请记录 blocker 并修复。"
+        }
+      ]
+    },
+    {
+      "id": "results_architecture",
+      "type": "stage",
+      "title": "Results Architecture",
+      "decision_policy": {
+        "mode": "model_choice",
+        "require_reason": true
+      },
+      "artifacts": [
+        {
+          "name": "results_architecture",
+          "path": "research/ai-ie/results_architecture.md",
+          "type": "markdown",
+          "required": true
+        }
+      ],
+      "checks": [
+        {
+          "name": "results_architecture_sections",
+          "command": ["{python}", "checks/check_markdown_sections.py"],
+          "severity": "error",
+          "config": {
+            "path": "research/ai-ie/results_architecture.md",
+            "min_chars": 1000,
+            "required_headings": [
+              "# Results Architecture",
+              "## Results Chain",
+              "## Result Modules",
+              "## Evidence Boundary",
+              "## Repair Log",
+              "## Status"
+            ]
+          }
+        },
+        {
+          "name": "results_architecture_status",
+          "command": ["{python}", "checks/check_research_status.py"],
+          "severity": "error",
+          "config": {
+            "path": "research/ai-ie/results_architecture.md",
+            "allowed_statuses": ["admitted", "repair_needed", "blocked"]
+          }
+        }
+      ],
+      "transitions": [
+        {
+          "id": "draft_figures_and_manuscript",
+          "when": "checks.results_architecture_status.metadata.status == \"admitted\"",
+          "action": "advance",
+          "to": "figures_manuscript",
+          "label": "进入 Figures + Manuscript",
+          "prompt": "结果链已建立。请把 insight 转为图表和正文。"
+        },
+        {
+          "id": "repair_results_architecture",
+          "when": "checks.results_architecture_status.metadata.status == \"repair_needed\"",
+          "action": "repeat",
+          "label": "重构 Results Architecture",
+          "prompt": "insight 成立但结果结构不行。请重构 results design 和 result modules。"
+        },
+        {
+          "id": "repair_design_from_results",
+          "when": "checks.results_architecture_status.metadata.status == \"repair_needed\"",
+          "action": "advance",
+          "to": "research_design",
+          "label": "回 Research Design 补证据",
+          "prompt": "结果结构暴露证据不足。请回研究设计补证据边界。"
+        },
+        {
+          "id": "resolve_results_blocker",
+          "when": "checks.results_architecture_status.metadata.status == \"blocked\"",
+          "action": "repeat",
+          "label": "处理结果结构阻断",
+          "prompt": "请记录并处理 results architecture blocker。"
+        }
+      ]
+    },
+    {
+      "id": "figures_manuscript",
+      "type": "stage",
+      "title": "Figures + Manuscript",
+      "artifacts": [
+        {
+          "name": "manuscript",
+          "path": "research/ai-ie/manuscript.md",
+          "type": "markdown",
+          "required": true
+        }
+      ],
+      "checks": [
+        {
+          "name": "manuscript_sections",
+          "command": ["{python}", "checks/check_markdown_sections.py"],
+          "severity": "error",
+          "config": {
+            "path": "research/ai-ie/manuscript.md",
+            "min_chars": 1600,
+            "required_headings": [
+              "# Manuscript Draft",
+              "## Abstract",
+              "## Introduction",
+              "## Results",
+              "## Figure Plan",
+              "## Claim Map",
+              "## Evidence Boundaries",
+              "## Status"
+            ]
+          }
+        },
+        {
+          "name": "manuscript_status",
+          "command": ["{python}", "checks/check_research_status.py"],
+          "severity": "error",
+          "config": {
+            "path": "research/ai-ie/manuscript.md",
+            "allowed_statuses": ["drafting", "figures_synced", "needs_repair", "blocked"]
+          }
+        }
+      ],
+      "transitions": [
+        {
+          "id": "audit_reader_evidence",
+          "when": "checks.manuscript_status.metadata.status == \"figures_synced\"",
+          "action": "advance",
+          "to": "reader_evidence_audit",
+          "label": "进入 Reader / Evidence Audit",
+          "prompt": "图表和正文已同步。请审计读者是否能理解并相信主张。"
+        },
+        {
+          "id": "continue_manuscript_drafting",
+          "when": "checks.manuscript_status.metadata.status == \"drafting\" || checks.manuscript_status.metadata.status == \"needs_repair\" || checks.manuscript_status.metadata.status == \"blocked\"",
+          "action": "repeat",
+          "label": "修正文稿和图表",
+          "prompt": "请继续修复正文、图表、claim map 或证据边界。"
+        }
+      ]
+    },
+    {
+      "id": "reader_evidence_audit",
+      "type": "gate",
+      "title": "Reader / Evidence Audit",
+      "artifacts": [
+        {
+          "name": "reader_evidence_audit",
+          "path": "research/ai-ie/reader_evidence_audit.md",
+          "type": "markdown",
+          "required": true
+        }
+      ],
+      "checks": [
+        {
+          "name": "reader_audit_sections",
+          "command": ["{python}", "checks/check_markdown_sections.py"],
+          "severity": "error",
+          "config": {
+            "path": "research/ai-ie/reader_evidence_audit.md",
+            "min_chars": 1000,
+            "required_headings": [
+              "# Reader / Evidence Audit",
+              "## Reader Comprehension",
+              "## Evidence Trust",
+              "## Citation Trace",
+              "## Readiness Judgment",
+              "## Status"
+            ]
+          }
+        },
+        {
+          "name": "reader_audit_status",
+          "command": ["{python}", "checks/check_research_status.py"],
+          "severity": "error",
+          "config": {
+            "path": "research/ai-ie/reader_evidence_audit.md",
+            "allowed_statuses": ["pending", "passed", "needs_repair", "blocked"]
+          }
+        }
+      ],
+      "transitions": [
+        {
+          "id": "prepare_submission_package",
+          "when": "checks.reader_audit_status.metadata.status == \"passed\"",
+          "action": "advance",
+          "to": "submission_package",
+          "label": "进入 Submission Package",
+          "prompt": "读者和证据审计通过。请整理投稿包。"
+        },
+        {
+          "id": "repair_manuscript_after_audit",
+          "when": "checks.reader_audit_status.metadata.status == \"pending\" || checks.reader_audit_status.metadata.status == \"needs_repair\" || checks.reader_audit_status.metadata.status == \"blocked\"",
+          "action": "advance",
+          "to": "figures_manuscript",
+          "label": "回 Figures + Manuscript 修复",
+          "prompt": "读者或证据审计不过。请回正文、图、引用、证据边界修复。"
+        }
+      ]
+    },
+    {
+      "id": "submission_package",
+      "type": "stage",
+      "title": "Submission Package",
+      "artifacts": [
+        {
+          "name": "submission_package",
+          "path": "research/ai-ie/submission_package.md",
+          "type": "markdown",
+          "required": true
+        }
+      ],
+      "checks": [
+        {
+          "name": "submission_package_sections",
+          "command": ["{python}", "checks/check_markdown_sections.py"],
+          "severity": "error",
+          "config": {
+            "path": "research/ai-ie/submission_package.md",
+            "min_chars": 900,
+            "required_headings": [
+              "# Submission Package",
+              "## Manuscript",
+              "## Figures",
+              "## References",
+              "## Declarations",
+              "## Cover Letter",
+              "## User Authority",
+              "## Status"
+            ]
+          }
+        },
+        {
+          "name": "submission_package_status",
+          "command": ["{python}", "checks/check_research_status.py"],
+          "severity": "error",
+          "config": {
+            "path": "research/ai-ie/submission_package.md",
+            "allowed_statuses": ["package_ready", "waiting_user_authority", "submitted_ready", "blocked"]
+          }
+        }
+      ],
+      "transitions": [
+        {
+          "id": "complete_research_package",
+          "when": "checks.submission_package_status.metadata.status == \"package_ready\" || checks.submission_package_status.metadata.status == \"submitted_ready\"",
+          "action": "advance",
+          "to": "research_complete",
+          "label": "完成 research workflow",
+          "prompt": "投稿包已经完整同步。下一步进入 terminal completion。"
+        },
+        {
+          "id": "request_submission_authority",
+          "when": "checks.submission_package_status.metadata.status == \"waiting_user_authority\"",
+          "action": "repeat",
+          "label": "等待用户投稿授权",
+          "prompt": "投稿包需要用户授权。请记录缺失的作者信息、声明、格式或 cover letter 决策。"
+        },
+        {
+          "id": "repair_submission_package",
+          "when": "checks.submission_package_status.metadata.status == \"blocked\"",
+          "action": "repeat",
+          "label": "修复投稿包",
+          "prompt": "投稿包仍有阻断项。请补齐声明、引用、图表、cover letter 或格式。"
+        }
+      ]
+    },
+    {
+      "id": "research_complete",
+      "type": "terminal",
+      "title": "Research Complete"
+    }
+  ]
+}

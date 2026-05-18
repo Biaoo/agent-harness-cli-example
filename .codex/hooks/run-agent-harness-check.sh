@@ -3,9 +3,12 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ROOT="$(cd "${SCRIPT_DIR}/../.." && pwd)"
-LOG_DIR="${ROOT}/reports"
-REPORT_ID="latest"
-HARNESS_PACKAGE="agent-harness-cli==0.1.1"
+WORKFLOW_PATH="workflows/ai-ie-research.json"
+REPORT_ID="research-latest"
+LOG_DIR="${ROOT}/reports/research-workflow"
+STDOUT_PATH="${LOG_DIR}/${REPORT_ID}.hook.json"
+STDERR_PATH="${LOG_DIR}/${REPORT_ID}.stderr.txt"
+HARNESS_PACKAGE="agent-harness-cli==0.1.2"
 mkdir -p "${LOG_DIR}"
 
 cd "${ROOT}"
@@ -15,83 +18,72 @@ if [[ "${AGENT_HARNESS_HOOK_ACTIVE:-}" == "1" ]]; then
 fi
 export AGENT_HARNESS_HOOK_ACTIVE=1
 
-if ! command -v uv >/dev/null 2>&1; then
+if command -v agent-harness >/dev/null 2>&1; then
+  HARNESS_CMD=(agent-harness)
+elif command -v uv >/dev/null 2>&1; then
+  HARNESS_CMD=(uvx --from "${HARNESS_PACKAGE}" agent-harness)
+else
   python3 - <<'PY'
 import json
 
-message = (
-    "uv was not found on PATH. Install uv first, then this hook can run "
-    "the published agent-harness-cli package with uvx."
-)
 print(json.dumps({
-    "systemMessage": message,
+    "systemMessage": (
+        "No agent-harness command was found and uv is unavailable. "
+        "Install uv or install agent-harness-cli==0.1.2."
+    )
 }, ensure_ascii=False))
 PY
   exit 0
 fi
 
 set +e
-AGENT_HARNESS_ENABLE_LLM="${AGENT_HARNESS_ENABLE_LLM:-1}" \
-  uvx --from "${HARNESS_PACKAGE}" agent-harness run-checks \
-    --task task.json \
-    --report-id "${REPORT_ID}" \
-    --timeout 300 \
-    > "${LOG_DIR}/${REPORT_ID}.summary.txt" 2>&1
+"${HARNESS_CMD[@]}" step \
+  --task "${WORKFLOW_PATH}" \
+  --report-id "${REPORT_ID}" \
+  --timeout 300 \
+  --hook-json \
+  > "${STDOUT_PATH}" 2> "${STDERR_PATH}"
 status=$?
 set -e
 
 HARNESS_STATUS="${status}" \
-LOG_DIR="${LOG_DIR}" \
+STDOUT_PATH="${STDOUT_PATH}" \
+STDERR_PATH="${STDERR_PATH}" \
+WORKFLOW_PATH="${WORKFLOW_PATH}" \
 REPORT_ID="${REPORT_ID}" \
-HARNESS_PACKAGE="${HARNESS_PACKAGE}" \
 python3 - <<'PY'
 import json
 import os
 from pathlib import Path
 
 status = int(os.environ["HARNESS_STATUS"])
-log_dir = Path(os.environ["LOG_DIR"])
+stdout_path = Path(os.environ["STDOUT_PATH"])
+stderr_path = Path(os.environ["STDERR_PATH"])
+workflow_path = os.environ["WORKFLOW_PATH"]
 report_id = os.environ["REPORT_ID"]
-harness_package = os.environ["HARNESS_PACKAGE"]
-summary = (log_dir / f"{report_id}.summary.txt").read_text(encoding="utf-8")
-report_path = log_dir / f"{report_id}.json"
-view_command = f"uvx --from {harness_package} agent-harness view {report_id} --failed-only --page-size 5"
+stdout = stdout_path.read_text(encoding="utf-8") if stdout_path.exists() else ""
+stderr = stderr_path.read_text(encoding="utf-8") if stderr_path.exists() else ""
 
-if status == 0:
+try:
+    payload = json.loads(stdout)
+except json.JSONDecodeError:
+    payload = None
+
+if isinstance(payload, dict) and ("decision" in payload or "systemMessage" in payload):
+    print(json.dumps(payload, ensure_ascii=False))
     raise SystemExit(0)
 
-failed_lines = []
-if report_path.exists():
-    report = json.loads(report_path.read_text(encoding="utf-8"))
-    for check in report.get("checks", []):
-        if check.get("passed", False):
-            continue
-        failed_lines.append(
-            f"- {check.get('check', 'unknown_check')}: "
-            f"{check.get('summary', 'No summary returned.')} "
-            f"(severity={check.get('severity', 'error')})"
-        )
-        for reason in check.get("reasons", [])[:2]:
-            if not isinstance(reason, dict):
-                continue
-            message = reason.get("message")
-            suggestion = reason.get("suggestion")
-            if message:
-                failed_lines.append(f"  Reason: {message}")
-            if suggestion:
-                failed_lines.append(f"  Suggestion: {suggestion}")
-else:
-    failed_lines.append(summary.strip() or f"agent-harness exited with status {status}.")
-
 reason = "\n".join([
-    "Agent harness found blocking failures, so do not finalize this turn yet.",
-    "Use the report below, update the artifact, then rerun the harness. Finish only after the blocking checks pass.",
+    "Agent harness workflow hook could not read a valid hook JSON payload.",
+    f"Workflow: {workflow_path}",
+    f"Report id: {report_id}",
+    f"Exit status: {status}",
     "",
-    f"Report: reports/{report_id}.json",
-    f"View failed checks: {view_command}",
+    "stdout tail:",
+    stdout[-2000:] or "<empty>",
     "",
-    "Failed checks:",
-    "\n".join(failed_lines),
+    "stderr tail:",
+    stderr[-2000:] or "<empty>",
 ])
 
 print(json.dumps({
