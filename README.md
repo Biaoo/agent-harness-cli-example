@@ -27,6 +27,7 @@ Results Architecture
 Figures + Manuscript
 Reader / Evidence Audit
 Submission Package
+Final Quality Review
 Research Complete
 ```
 
@@ -130,13 +131,14 @@ agent-harness view research-latest --report-dir reports/research --failed-only
 
 ## Acceptance Surface
 
-The workflow uses three layers of gates:
+The workflow uses four layers of gates:
 
 | Layer | Purpose | Implementation |
 | --- | --- | --- |
 | Structure | Ensure the active artifact exists, has required headings, and has enough substance to inspect. | `check_markdown_sections.py` |
 | Stage semantics | Verify that the stage is genuinely complete and the chosen `Status:` is justified. | `check_research_checklist.py` + `checklists/research/stage/*.md` |
 | Deep research quality | Check research-object modeling, true information delta, method-claim match, data provenance, evidence boundaries, alternative explanations, and manuscript argument quality. | `check_research_checklist.py` + `checklists/research/deep/*.md` |
+| Evidence controls | Require source evidence packs, data fitness matrices, claim-evidence traces, claim-strength calibration, link integrity, overclaim review, and final quality reporting. | `check_research_csv_contract.py`, `check_research_trace_links.py`, dedicated checklists |
 
 The workflow uses these check scripts:
 
@@ -145,6 +147,8 @@ The workflow uses these check scripts:
 | `check_research_context.py` | Verifies `research/context.json` and the matching topic directory. | `research/context.json` |
 | `check_markdown_sections.py` | Verifies that the active Markdown artifact exists, has required headings, and is substantive enough for that node. | `workflows/research.json` |
 | `check_research_status.py` | Reads the artifact's `Status: <value>` line and exposes it as `metadata.status` for transition conditions. | `workflows/research.json` |
+| `check_research_csv_contract.py` | Verifies required CSV evidence-control artifacts, columns, row counts, non-empty cells, and enum values. | `workflows/research.json` |
+| `check_research_trace_links.py` | Verifies claim trace rows reference existing source IDs and data-fitness claim IDs. | `source_evidence_pack.csv`, `claim_evidence_trace.csv`, `data_fitness_matrix.csv` |
 | `check_research_checklist.py` | Calls local `codex exec` to fill a Markdown checklist, then parses checked/unchecked items into harness JSON. | `checklists/research/` |
 
 The workflow graph owns routing. Structure and status checks are deterministic.
@@ -168,6 +172,8 @@ checks/
   check_research_context.py          Runtime topic context check.
   check_markdown_sections.py         Markdown artifact structure check.
   check_research_status.py           Workflow routing status check.
+  check_research_csv_contract.py     CSV evidence-control contract check.
+  check_research_trace_links.py      Claim/source/data link integrity check.
   check_research_checklist.py        Markdown checklist semantic/deep gate.
   local_codex_judge.py               Local Codex checklist judge helper.
   research_paths.py                  Shared topic path resolver.

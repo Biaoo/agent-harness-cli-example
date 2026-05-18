@@ -424,6 +424,18 @@
           "path": "research/{topic_slug}/data_acquisition.md",
           "type": "markdown",
           "required": true
+        },
+        {
+          "name": "source_evidence_pack",
+          "path": "research/{topic_slug}/source_evidence_pack.csv",
+          "type": "csv",
+          "required": true
+        },
+        {
+          "name": "data_fitness_matrix",
+          "path": "research/{topic_slug}/data_fitness_matrix.csv",
+          "type": "csv",
+          "required": true
         }
       ],
       "checks": [
@@ -452,6 +464,57 @@
           "config": {
             "path": "research/{topic_slug}/data_acquisition.md",
             "allowed_statuses": ["searching", "acquired", "substitute_found", "insufficient", "biased", "permission_blocked", "infeasible"]
+          }
+        },
+        {
+          "name": "source_evidence_pack_contract",
+          "command": ["{python}", "checks/check_research_csv_contract.py"],
+          "severity": "error",
+          "config": {
+            "path": "research/{topic_slug}/source_evidence_pack.csv",
+            "min_rows": 6,
+            "required_columns": ["source_id", "title", "source_type", "authority_level", "url", "accessed_date", "locator", "excerpt_or_summary", "extracted_fact", "uncertainty", "used_in_claims"],
+            "nonempty_columns": ["source_id", "title", "source_type", "authority_level", "url", "accessed_date", "extracted_fact", "used_in_claims"],
+            "allowed_values": {
+              "source_type": ["law", "official_report", "official_guidance", "dataset", "academic_paper", "working_paper", "news", "secondary_analysis", "other"],
+              "authority_level": ["primary", "official", "peer_reviewed", "working_paper", "secondary", "weak"]
+            }
+          }
+        },
+        {
+          "name": "data_fitness_matrix_contract",
+          "command": ["{python}", "checks/check_research_csv_contract.py"],
+          "severity": "error",
+          "config": {
+            "path": "research/{topic_slug}/data_fitness_matrix.csv",
+            "min_rows": 3,
+            "required_columns": ["claim_id", "data_source_or_proxy", "directness", "supports_claim", "cannot_support", "distortion_risk", "mitigation", "routing_decision"],
+            "allowed_values": {
+              "directness": ["direct", "proxy", "substitute", "background"],
+              "routing_decision": ["proceed", "narrow_claim", "repair_data", "return_to_design", "blocked"]
+            }
+          }
+        },
+        {
+          "name": "source_evidence_deep_quality",
+          "command": ["{python}", "checks/check_research_checklist.py"],
+          "severity": "error",
+          "config": {
+            "path": "research/{topic_slug}/source_evidence_pack.csv",
+            "checklist": "checklists/research/deep/source_evidence_quality.md",
+            "aspect": "source_evidence_deep_quality",
+            "reasoning_effort": "high"
+          }
+        },
+        {
+          "name": "data_fitness_for_claim_quality",
+          "command": ["{python}", "checks/check_research_checklist.py"],
+          "severity": "error",
+          "config": {
+            "path": "research/{topic_slug}/data_fitness_matrix.csv",
+            "checklist": "checklists/research/deep/data_fitness_for_claim.md",
+            "aspect": "data_fitness_for_claim_quality",
+            "reasoning_effort": "high"
           }
         },
         {
@@ -517,6 +580,12 @@
           "path": "research/{topic_slug}/analysis_findings.md",
           "type": "markdown",
           "required": true
+        },
+        {
+          "name": "claim_evidence_trace",
+          "path": "research/{topic_slug}/claim_evidence_trace.csv",
+          "type": "csv",
+          "required": true
         }
       ],
       "checks": [
@@ -545,6 +614,42 @@
           "config": {
             "path": "research/{topic_slug}/analysis_findings.md",
             "allowed_statuses": ["running", "produced", "robust", "surprising", "null", "noisy", "weak", "failed"]
+          }
+        },
+        {
+          "name": "claim_evidence_trace_contract",
+          "command": ["{python}", "checks/check_research_csv_contract.py"],
+          "severity": "error",
+          "config": {
+            "path": "research/{topic_slug}/claim_evidence_trace.csv",
+            "min_rows": 4,
+            "required_columns": ["claim_id", "claim", "claim_type", "claim_strength", "evidence_ids", "source_ids", "method_support", "boundary", "falsification_test", "negative_evidence", "status"],
+            "allowed_values": {
+              "claim_type": ["central", "supporting", "boundary", "rejected", "background"],
+              "claim_strength": ["descriptive", "mechanism", "correlational", "causal", "speculative"],
+              "status": ["supported", "bounded", "weak", "rejected", "needs_repair"]
+            }
+          }
+        },
+        {
+          "name": "claim_trace_link_integrity",
+          "command": ["{python}", "checks/check_research_trace_links.py"],
+          "severity": "error",
+          "config": {
+            "claim_trace": "research/{topic_slug}/claim_evidence_trace.csv",
+            "source_pack": "research/{topic_slug}/source_evidence_pack.csv",
+            "data_fitness": "research/{topic_slug}/data_fitness_matrix.csv"
+          }
+        },
+        {
+          "name": "claim_trace_deep_quality",
+          "command": ["{python}", "checks/check_research_checklist.py"],
+          "severity": "error",
+          "config": {
+            "path": "research/{topic_slug}/claim_evidence_trace.csv",
+            "checklist": "checklists/research/deep/claim_trace_quality.md",
+            "aspect": "claim_trace_deep_quality",
+            "reasoning_effort": "high"
           }
         },
         {
@@ -638,6 +743,42 @@
           "config": {
             "path": "research/{topic_slug}/insight_verification.md",
             "allowed_statuses": ["confirmed_insight", "weak", "already_known", "derivative", "no_delta", "contradicted", "blocked"]
+          }
+        },
+        {
+          "name": "verification_claim_trace_contract",
+          "command": ["{python}", "checks/check_research_csv_contract.py"],
+          "severity": "error",
+          "config": {
+            "path": "research/{topic_slug}/claim_evidence_trace.csv",
+            "min_rows": 4,
+            "required_columns": ["claim_id", "claim", "claim_type", "claim_strength", "evidence_ids", "source_ids", "method_support", "boundary", "falsification_test", "negative_evidence", "status"],
+            "allowed_values": {
+              "claim_type": ["central", "supporting", "boundary", "rejected", "background"],
+              "claim_strength": ["descriptive", "mechanism", "correlational", "causal", "speculative"],
+              "status": ["supported", "bounded", "weak", "rejected", "needs_repair"]
+            }
+          }
+        },
+        {
+          "name": "verification_trace_link_integrity",
+          "command": ["{python}", "checks/check_research_trace_links.py"],
+          "severity": "error",
+          "config": {
+            "claim_trace": "research/{topic_slug}/claim_evidence_trace.csv",
+            "source_pack": "research/{topic_slug}/source_evidence_pack.csv",
+            "data_fitness": "research/{topic_slug}/data_fitness_matrix.csv"
+          }
+        },
+        {
+          "name": "verification_claim_trace_quality",
+          "command": ["{python}", "checks/check_research_checklist.py"],
+          "severity": "error",
+          "config": {
+            "path": "research/{topic_slug}/claim_evidence_trace.csv",
+            "checklist": "checklists/research/deep/claim_trace_quality.md",
+            "aspect": "verification_claim_trace_quality",
+            "reasoning_effort": "high"
           }
         },
         {
@@ -835,6 +976,31 @@
           }
         },
         {
+          "name": "manuscript_claim_trace_contract",
+          "command": ["{python}", "checks/check_research_csv_contract.py"],
+          "severity": "error",
+          "config": {
+            "path": "research/{topic_slug}/claim_evidence_trace.csv",
+            "min_rows": 4,
+            "required_columns": ["claim_id", "claim", "claim_type", "claim_strength", "evidence_ids", "source_ids", "method_support", "boundary", "falsification_test", "negative_evidence", "status"],
+            "allowed_values": {
+              "claim_type": ["central", "supporting", "boundary", "rejected", "background"],
+              "claim_strength": ["descriptive", "mechanism", "correlational", "causal", "speculative"],
+              "status": ["supported", "bounded", "weak", "rejected", "needs_repair"]
+            }
+          }
+        },
+        {
+          "name": "manuscript_trace_link_integrity",
+          "command": ["{python}", "checks/check_research_trace_links.py"],
+          "severity": "error",
+          "config": {
+            "claim_trace": "research/{topic_slug}/claim_evidence_trace.csv",
+            "source_pack": "research/{topic_slug}/source_evidence_pack.csv",
+            "data_fitness": "research/{topic_slug}/data_fitness_matrix.csv"
+          }
+        },
+        {
           "name": "manuscript_argument_deep_quality",
           "command": ["{python}", "checks/check_research_checklist.py"],
           "severity": "error",
@@ -842,6 +1008,17 @@
             "path": "research/{topic_slug}/manuscript.md",
             "checklist": "checklists/research/deep/manuscript_argument_quality.md",
             "aspect": "manuscript_argument_deep_quality",
+            "reasoning_effort": "high"
+          }
+        },
+        {
+          "name": "manuscript_overclaim_review",
+          "command": ["{python}", "checks/check_research_checklist.py"],
+          "severity": "error",
+          "config": {
+            "path": "research/{topic_slug}/manuscript.md",
+            "checklist": "checklists/research/deep/manuscript_overclaim_review.md",
+            "aspect": "manuscript_overclaim_review",
             "reasoning_effort": "high"
           }
         }
@@ -992,9 +1169,9 @@
           "id": "complete_research_package",
           "when": "checks.submission_package_status.metadata.status == \"package_ready\" || checks.submission_package_status.metadata.status == \"submitted_ready\"",
           "action": "advance",
-          "to": "research_complete",
-          "label": "完成 research workflow",
-          "prompt": "投稿包已经完整同步。下一步进入 terminal completion。"
+          "to": "final_quality_review",
+          "label": "进入 Final Quality Review",
+          "prompt": "投稿包已经完整同步。请生成最终质量报告，汇总 gate 历史、证据覆盖、残余风险和外部使用等级。"
         },
         {
           "id": "request_submission_authority",
@@ -1009,6 +1186,87 @@
           "action": "repeat",
           "label": "修复投稿包",
           "prompt": "投稿包仍有阻断项。请补齐声明、引用、图表、cover letter 或格式。"
+        }
+      ]
+    },
+    {
+      "id": "final_quality_review",
+      "type": "gate",
+      "title": "Final Quality Review",
+      "artifacts": [
+        {
+          "name": "quality_report",
+          "path": "research/{topic_slug}/quality_report.md",
+          "type": "markdown",
+          "required": true
+        }
+      ],
+      "checks": [
+        {
+          "name": "quality_report_sections",
+          "command": ["{python}", "checks/check_markdown_sections.py"],
+          "severity": "error",
+          "config": {
+            "path": "research/{topic_slug}/quality_report.md",
+            "min_chars": 1200,
+            "required_headings": [
+              "# Final Quality Report",
+              "## Stage Outcomes",
+              "## Failed Gates and Repairs",
+              "## Claim Evidence Coverage",
+              "## Data Fitness and Source Audit",
+              "## Residual Risks",
+              "## External Use Readiness",
+              "## Status"
+            ]
+          }
+        },
+        {
+          "name": "quality_report_status",
+          "command": ["{python}", "checks/check_research_status.py"],
+          "severity": "error",
+          "config": {
+            "path": "research/{topic_slug}/quality_report.md",
+            "allowed_statuses": ["passed", "needs_repair", "blocked"]
+          }
+        },
+        {
+          "name": "final_trace_link_integrity",
+          "command": ["{python}", "checks/check_research_trace_links.py"],
+          "severity": "error",
+          "config": {
+            "claim_trace": "research/{topic_slug}/claim_evidence_trace.csv",
+            "source_pack": "research/{topic_slug}/source_evidence_pack.csv",
+            "data_fitness": "research/{topic_slug}/data_fitness_matrix.csv"
+          }
+        },
+        {
+          "name": "quality_report_stage_quality",
+          "command": ["{python}", "checks/check_research_checklist.py"],
+          "severity": "error",
+          "config": {
+            "path": "research/{topic_slug}/quality_report.md",
+            "checklist": "checklists/research/stage/final_quality_report.md",
+            "aspect": "final_quality_report_stage_quality",
+            "reasoning_effort": "high"
+          }
+        }
+      ],
+      "transitions": [
+        {
+          "id": "complete_after_quality_review",
+          "when": "checks.quality_report_status.metadata.status == \"passed\"",
+          "action": "advance",
+          "to": "research_complete",
+          "label": "完成 research workflow",
+          "prompt": "最终质量报告通过。下一步进入 terminal completion。"
+        },
+        {
+          "id": "repair_after_quality_review",
+          "when": "checks.quality_report_status.metadata.status == \"needs_repair\" || checks.quality_report_status.metadata.status == \"blocked\"",
+          "action": "repeat",
+          "label": "修复最终质量问题",
+          "prompt": "最终质量报告指出仍有修复项。请修复相关 artifact、claim trace、source evidence 或 quality_report 后再次验收。"
         }
       ]
     },

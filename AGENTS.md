@@ -47,8 +47,7 @@ For each active workflow node:
 
 1. Read the node's artifact contract in `research/README.md`.
 2. Read `research/context.json` to resolve `{topic_slug}`.
-3. Create or update the required Markdown artifact under
-   `research/<topic_slug>/`.
+3. Create or update the required artifact under `research/<topic_slug>/`.
 4. Include every required heading exactly as specified.
 5. Include one routing line: `Status: <allowed_status>`.
 6. Choose the status honestly from the node's allowed statuses based on the
@@ -56,7 +55,7 @@ For each active workflow node:
 7. Do not advance by optimism. If evidence is weak, incomplete, blocked, or
    already known, use the status that routes back for repair.
 
-The workflow has three gate layers:
+The workflow has four gate layers:
 
 - structure: artifact exists, required headings are present, and minimum
   substantive length is met;
@@ -65,6 +64,20 @@ The workflow has three gate layers:
 - deep quality: critical gates check research-object modeling, true information
   delta, method-claim match, data provenance, evidence boundaries, alternative
   explanations, and manuscript argument carrying capacity.
+- evidence controls: deterministic CSV and link checks require source evidence
+  packs, data fitness matrices, claim-evidence traces, calibrated claim
+  strength, and a final aggregate quality report.
+
+Key evidence-control artifacts:
+
+- `source_evidence_pack.csv`: source IDs, authority level, locator/excerpt,
+  extracted fact, uncertainty, and used-in-claim mapping.
+- `data_fitness_matrix.csv`: claim/data fit, directness, what the data cannot
+  support, distortion risk, mitigation, and routing decision.
+- `claim_evidence_trace.csv`: claim IDs, claim strength, source IDs,
+  method support, evidence boundary, falsification test, and negative evidence.
+- `quality_report.md`: final stage outcomes, failed gates and repairs, claim
+  coverage, data/source audit, residual risks, and external-use readiness.
 
 Content quality checks use local `codex exec` to fill Markdown checklists, then
 the check script parses the checklist into harness JSON. For deterministic-only
@@ -104,3 +117,5 @@ Do not commit runtime state or reports:
 
 - `.agent-harness/`
 - `reports/`
+- `research/context.json`
+- `research/<topic_slug>/`

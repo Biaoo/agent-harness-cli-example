@@ -23,6 +23,7 @@ Results Architecture
 Figures + Manuscript
 Reader / Evidence Audit
 Submission Package
+Final Quality Review
 Research Complete
 ```
 
@@ -122,13 +123,14 @@ agent-harness view research-latest --report-dir reports/research --failed-only
 
 ## 验收面
 
-workflow 使用三层 gate：
+workflow 使用四层 gate：
 
 | 层级 | 目的 | 实现 |
 | --- | --- | --- |
 | Structure | 确认 active artifact 存在、必需标题齐全，并达到最低内容量。 | `check_markdown_sections.py` |
 | Stage semantics | 判断阶段是否真的完成，`Status:` 是否有证据支撑。 | `check_research_checklist.py` + `checklists/research/stage/*.md` |
 | Deep research quality | 检查研究对象建模、真实信息增量、方法-claim 匹配、数据来源可复现性、证据边界、反解释和主文承载力。 | `check_research_checklist.py` + `checklists/research/deep/*.md` |
+| Evidence controls | 强制 source evidence pack、data fitness matrix、claim-evidence trace、claim 强度校准、引用链完整性、overclaim review 和最终质量报告。 | `check_research_csv_contract.py`, `check_research_trace_links.py`, 专用 checklists |
 
 workflow 使用这些 check 脚本：
 
@@ -137,6 +139,8 @@ workflow 使用这些 check 脚本：
 | `check_research_context.py` | 检查 `research/context.json` 和对应主题目录。 | `research/context.json` |
 | `check_markdown_sections.py` | 检查当前 Markdown artifact 是否存在、是否包含必需标题、内容是否达到最低信息量。 | `workflows/research.json` |
 | `check_research_status.py` | 读取 artifact 中的 `Status: <value>`，并把它作为 `metadata.status` 提供给 transition 条件。 | `workflows/research.json` |
+| `check_research_csv_contract.py` | 检查 CSV 证据控制 artifact 的字段、行数、非空单元和枚举值。 | `workflows/research.json` |
+| `check_research_trace_links.py` | 检查 claim trace 是否引用真实存在的 source IDs 和 data-fitness claim IDs。 | `source_evidence_pack.csv`, `claim_evidence_trace.csv`, `data_fitness_matrix.csv` |
 | `check_research_checklist.py` | 调用本地 `codex exec` 填写 Markdown checklist，再把 checked/unchecked items 解析成 harness JSON。 | `checklists/research/` |
 
 workflow graph 负责路由。结构和状态检查是确定性的。Checklist checks 是语义质量 gate；只有做 deterministic-only 调试时才设置 `AGENT_HARNESS_ENABLE_LLM=0`。
@@ -157,6 +161,8 @@ checks/
   check_research_context.py          运行时主题 context 检查。
   check_markdown_sections.py         Markdown artifact 结构检查。
   check_research_status.py           workflow 路由状态检查。
+  check_research_csv_contract.py     CSV 证据控制合同检查。
+  check_research_trace_links.py      claim/source/data 链接完整性检查。
   check_research_checklist.py        Markdown checklist 语义/深层质量 gate。
   local_codex_judge.py               本地 Codex checklist judge helper。
   research_paths.py                  共享主题路径解析器。

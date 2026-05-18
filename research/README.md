@@ -6,7 +6,7 @@ This directory contains the artifact contract for the workflow example in
 The workflow drives a research idea through topic setup, idea intake, knowledge
 mapping, insight discovery, research design, data acquisition, analysis,
 insight verification, results architecture, manuscript drafting,
-reader/evidence audit, and submission packaging.
+reader/evidence audit, submission packaging, and final quality review.
 
 The hard routing rule is:
 
@@ -62,6 +62,9 @@ The workflow does not rely on structure alone. Critical nodes use layered gates:
 3. Deep quality checklist checks verify research-object modeling, true
    information delta, method-claim fit, data provenance, evidence boundaries,
    alternative explanations, and whether the insight can carry a main paper.
+4. Evidence-control checks require auditable source rows, claim-evidence traces,
+   data fitness judgments, claim-strength calibration, overclaim review, and a
+   final aggregate quality report.
 
 Checklist checks call local `codex exec` to fill Markdown checklists from
 `checklists/research/`, then parse the checklist into harness JSON. Set
@@ -144,6 +147,8 @@ Required headings:
 
 ```text
 research/{topic_slug}/data_acquisition.md
+research/{topic_slug}/source_evidence_pack.csv
+research/{topic_slug}/data_fitness_matrix.csv
 Status: searching | acquired | substitute_found | insufficient | biased | permission_blocked | infeasible
 Required headings:
 # Data Acquisition
@@ -153,12 +158,17 @@ Required headings:
 ## Data Fitness for Research Design
 ## Bias or Permission Risks
 ## Status
+Required source_evidence_pack.csv columns:
+source_id,title,source_type,authority_level,url,accessed_date,locator,excerpt_or_summary,extracted_fact,uncertainty,used_in_claims
+Required data_fitness_matrix.csv columns:
+claim_id,data_source_or_proxy,directness,supports_claim,cannot_support,distortion_risk,mitigation,routing_decision
 ```
 
 `analysis`
 
 ```text
 research/{topic_slug}/analysis_findings.md
+research/{topic_slug}/claim_evidence_trace.csv
 Status: running | produced | robust | surprising | null | noisy | weak | failed
 Required headings:
 # Analysis Findings
@@ -168,12 +178,15 @@ Required headings:
 ## Robustness or Sensitivity
 ## Interpretation
 ## Status
+Required claim_evidence_trace.csv columns:
+claim_id,claim,claim_type,claim_strength,evidence_ids,source_ids,method_support,boundary,falsification_test,negative_evidence,status
 ```
 
 `insight_verification`
 
 ```text
 research/{topic_slug}/insight_verification.md
+research/{topic_slug}/claim_evidence_trace.csv
 Status: confirmed_insight | weak | already_known | derivative | no_delta | contradicted | blocked
 Required headings:
 # Insight Verification
@@ -203,6 +216,7 @@ Required headings:
 
 ```text
 research/{topic_slug}/manuscript.md
+research/{topic_slug}/claim_evidence_trace.csv
 Status: drafting | figures_synced | needs_repair | blocked
 Required headings:
 # Manuscript Draft
@@ -212,6 +226,22 @@ Required headings:
 ## Figure Plan
 ## Claim Map
 ## Evidence Boundaries
+## Status
+```
+
+`final_quality_review`
+
+```text
+research/{topic_slug}/quality_report.md
+Status: passed | needs_repair | blocked
+Required headings:
+# Final Quality Report
+## Stage Outcomes
+## Failed Gates and Repairs
+## Claim Evidence Coverage
+## Data Fitness and Source Audit
+## Residual Risks
+## External Use Readiness
 ## Status
 ```
 
