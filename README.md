@@ -4,7 +4,7 @@
 
 This repository is a runnable example for
 [Biaoo/agent-harness-cli](https://github.com/Biaoo/agent-harness-cli). It shows
-how the workflow-controller mode can drive a long-running AI-IE research task
+how the workflow-controller mode can drive a long-running research task
 through explicit states, checks, routing decisions, and Codex Stop hook
 continuation.
 
@@ -12,9 +12,10 @@ The repository contains only this research workflow example.
 
 ## Workflow Goal
 
-The workflow turns a rough AI-IE research idea into a complete research package:
+The workflow turns a rough research idea into a topic-scoped research package:
 
 ```text
+Research Context
 Idea Intake
 World Knowledge Map
 Insight Direction Discovery
@@ -38,29 +39,43 @@ Do not route to SI-only digestion, downgrade publication, or a weaker fallback p
 
 ## Harness Engineering Flow
 
-1. Codex works on the active research artifact under `research/ai-ie/`.
-2. The project-level Stop hook runs `agent-harness step`.
-3. The workflow controller validates the active node's artifacts and `Status:`
+1. Codex creates `research/context.json` with the runtime topic metadata.
+2. Codex works on the active research artifact under `research/<topic_slug>/`.
+3. The project-level Stop hook runs `agent-harness step`.
+4. The workflow controller validates the active node's artifacts and `Status:`
    value.
-4. If the node fails, the hook blocks and tells Codex what to repair.
-5. If exactly one transition matches, the workflow state advances and the hook
+5. If the node fails, the hook blocks and tells Codex what to repair.
+6. If exactly one transition matches, the workflow state advances and the hook
    blocks with the next-stage instruction.
-6. If multiple transitions match, the state enters `choosing`; Codex must inspect
+7. If multiple transitions match, the state enters `choosing`; Codex must inspect
    `agent-harness options` and run `agent-harness choose`.
-7. The hook stops blocking only after the terminal workflow node completes.
+8. The hook stops blocking only after the terminal workflow node completes.
 
 ## Try It
 
 Start a Codex session in this directory and ask:
 
 ```text
-Research this idea with the AI-IE research workflow:
+Research this idea with the research workflow:
 
 <your research idea>
 ```
 
 `AGENTS.md` contains the project-level workflow instructions, so the user does
 not need to paste the workflow protocol into the prompt.
+
+On the first step, Codex creates:
+
+```json
+{
+  "topic_title": "Human-readable research topic",
+  "topic_slug": "lower-kebab-topic-slug",
+  "research_dir": "research/lower-kebab-topic-slug"
+}
+```
+
+All later artifact paths in the workflow use `research/{topic_slug}/...`; the
+check scripts resolve that placeholder from `research/context.json`.
 
 When Codex attempts to stop, `.codex/hooks.json` runs:
 
@@ -71,7 +86,7 @@ bash "$(git rev-parse --show-toplevel)/.codex/hooks/run-agent-harness-check.sh"
 That script calls:
 
 ```bash
-agent-harness step --task workflows/ai-ie-research.json --report-id research-latest --hook-json
+agent-harness step --task workflows/research.json --report-id research-latest --hook-json
 ```
 
 The hook uses `agent-harness` if it is installed. Otherwise it falls back to:
@@ -85,32 +100,32 @@ uvx --from agent-harness-cli==0.1.2 agent-harness
 Validate the workflow:
 
 ```bash
-agent-harness validate-workflow --task workflows/ai-ie-research.json
+agent-harness validate-workflow --task workflows/research.json
 ```
 
 Run one workflow step:
 
 ```bash
-agent-harness step --task workflows/ai-ie-research.json --hook-json
+agent-harness step --task workflows/research.json --hook-json
 ```
 
 Inspect state:
 
 ```bash
-agent-harness status --state .agent-harness/ai-ie-research-state.json
+agent-harness status --state .agent-harness/research-state.json
 ```
 
 Inspect and choose a model-choice transition:
 
 ```bash
-agent-harness options --state .agent-harness/ai-ie-research-state.json
-agent-harness choose <transition-id> --state .agent-harness/ai-ie-research-state.json --reason "why this route is appropriate"
+agent-harness options --state .agent-harness/research-state.json
+agent-harness choose <transition-id> --state .agent-harness/research-state.json --reason "why this route is appropriate"
 ```
 
 View the latest workflow report:
 
 ```bash
-agent-harness view research-latest --report-dir reports/research-workflow --failed-only
+agent-harness view research-latest --report-dir reports/research --failed-only
 ```
 
 ## Acceptance Surface
@@ -127,13 +142,18 @@ The workflow uses these check scripts:
 
 | Check | Purpose | Source of truth |
 | --- | --- | --- |
-| `check_markdown_sections.py` | Verifies that the active Markdown artifact exists, has required headings, and is substantive enough for that node. | `workflows/ai-ie-research.json` |
-| `check_research_status.py` | Reads the artifact's `Status: <value>` line and exposes it as `metadata.status` for transition conditions. | `workflows/ai-ie-research.json` |
+| `check_research_context.py` | Verifies `research/context.json` and the matching topic directory. | `research/context.json` |
+| `check_markdown_sections.py` | Verifies that the active Markdown artifact exists, has required headings, and is substantive enough for that node. | `workflows/research.json` |
+| `check_research_status.py` | Reads the artifact's `Status: <value>` line and exposes it as `metadata.status` for transition conditions. | `workflows/research.json` |
 | `check_research_checklist.py` | Calls local `codex exec` to fill a Markdown checklist, then parses checked/unchecked items into harness JSON. | `checklists/research/` |
 
 The workflow graph owns routing. Structure and status checks are deterministic.
 Checklist checks are semantic quality gates; set `AGENT_HARNESS_ENABLE_LLM=0`
 only for deterministic-only debugging.
+
+`research/context.json` is the runtime path resolver. A single checkout can run
+different topics over time by changing `topic_slug`; artifacts stay isolated
+under `research/<topic_slug>/`.
 
 ## Project Layout
 
@@ -145,17 +165,21 @@ AGENTS.md                            Project instructions for Codex.
   hooks.json                         Project-level Stop hook config.
   hooks/run-agent-harness-check.sh   Workflow Stop hook entry point.
 checks/
+  check_research_context.py          Runtime topic context check.
   check_markdown_sections.py         Markdown artifact structure check.
   check_research_status.py           Workflow routing status check.
   check_research_checklist.py        Markdown checklist semantic/deep gate.
   local_codex_judge.py               Local Codex checklist judge helper.
+  research_paths.py                  Shared topic path resolver.
 checklists/
   research/stage/                    Stage completion checklist templates.
   research/deep/                     Deep research quality checklist templates.
 workflows/
-  ai-ie-research.json                Research workflow graph.
+  research.json                      Research workflow graph.
 research/
-  ai-ie/README.md                    Artifact contract and allowed statuses.
+  README.md                          Artifact contract and allowed statuses.
+  context.json                       Runtime topic context, generated by Codex.
+  <topic_slug>/                      Topic-specific research artifacts.
 pyproject.toml                       Example package metadata.
 ```
 
@@ -164,6 +188,8 @@ Generated runtime files are ignored:
 ```text
 .agent-harness/
 reports/
+research/context.json
+research/<topic_slug>/
 ```
 
 ## Design Notes

@@ -3,9 +3,9 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ROOT="$(cd "${SCRIPT_DIR}/../.." && pwd)"
-WORKFLOW_PATH="workflows/ai-ie-research.json"
+WORKFLOW_PATH="workflows/research.json"
 REPORT_ID="research-latest"
-LOG_DIR="${ROOT}/reports/research-workflow"
+LOG_DIR="${ROOT}/reports/research"
 STDOUT_PATH="${LOG_DIR}/${REPORT_ID}.hook.json"
 STDERR_PATH="${LOG_DIR}/${REPORT_ID}.stderr.txt"
 HARNESS_PACKAGE="agent-harness-cli==0.1.2"

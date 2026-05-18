@@ -1,6 +1,6 @@
 [project]
 name = "agent-harness-cli-example"
 version = "0.1.1"
-description = "Example workspace that uses the agent-harness CLI workflow controller for an AI-IE research task."
+description = "Example workspace that uses the agent-harness CLI workflow controller for topic-scoped research tasks."
 requires-python = ">=3.11"
 dependencies = []

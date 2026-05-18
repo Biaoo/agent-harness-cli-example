@@ -8,6 +8,7 @@ from pathlib import Path
 from typing import Any
 
 from local_codex_judge import run_codex_checklist_judge
+from research_paths import resolve, resolve_config_path
 
 
 CHECKBOX_RE = re.compile(r"^- \[(?P<mark>[ xX])\] (?P<text>.+)$")
@@ -16,11 +17,6 @@ STATUS_RE = re.compile(r"^\s*(?:status|状态)\s*[:：]\s*(?P<status>[A-Za-z0-9_
 
 def field_value(line: str) -> str:
     return line.split(":", 1)[1].strip() if ":" in line else ""
-
-
-def resolve(root: Path, value: str) -> Path:
-    path = Path(value)
-    return path if path.is_absolute() else root / path
 
 
 def extract_status(text: str) -> str:
@@ -128,12 +124,12 @@ def run(input_data: dict[str, Any]) -> dict[str, Any]:
             "Set check.config.checklist to a Markdown checklist template.",
         )
 
-    artifact_path = resolve(root, raw_path)
+    display_path, artifact_path, context = resolve_config_path(root, raw_path, config)
     if not artifact_path.exists():
         return missing_file_result(
             name,
             severity,
-            raw_path,
+            display_path,
             "Research artifact is missing.",
             "Create the artifact before running the content checklist.",
         )
@@ -162,8 +158,9 @@ Mark an item as satisfied only when the artifact provides concrete evidence.
 
 Workflow node: {node_id} ({node_title})
 Checklist aspect: {aspect}
-Artifact path: {raw_path}
+Artifact path: {display_path}
 Artifact status: {status or "<missing>"}
+Research context: {json.dumps(context, ensure_ascii=False)}
 
 Research rule:
 Either the work supports a main-text-level insight, or it must route back for repair.
@@ -220,7 +217,7 @@ Artifact:
     score = (len(items) - len(failed_items)) / len(items)
     reasons = [
         {
-            "file": raw_path,
+            "file": display_path,
             "message": item["criterion"] or item["text"],
             "suggestion": item["suggestion"] or "Revise the artifact so this checklist item is satisfied.",
             "requires_user_input": False,
@@ -230,6 +227,7 @@ Artifact:
                 "reason": item["reason"],
                 "judge_evidence": item["evidence_text"],
                 "checklist": checklist_ref,
+                "context": context,
                 "status": status,
             },
         }
@@ -251,6 +249,9 @@ Artifact:
             "aspect": aspect,
             "provider": "local-codex-checklist",
             "checklist": checklist_ref,
+            "raw_path": raw_path,
+            "path": display_path,
+            "context": context,
             "status": status,
             "filled_checklist": filled,
         },

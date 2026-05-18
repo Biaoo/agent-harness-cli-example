@@ -6,13 +6,10 @@ import re
 from pathlib import Path
 from typing import Any
 
+from research_paths import resolve_config_path
+
 
 STATUS_RE = re.compile(r"^\s*(?:status|状态)\s*[:：]\s*(?P<status>[A-Za-z0-9_/-]+)\s*$", re.IGNORECASE)
-
-
-def resolve(root: Path, value: str) -> Path:
-    path = Path(value)
-    return path if path.is_absolute() else root / path
 
 
 def extract_status(text: str) -> str | None:
@@ -46,7 +43,7 @@ def run(input_data: dict[str, Any]) -> dict[str, Any]:
             }]
         }
 
-    path = resolve(root, raw_path)
+    display_path, path, context = resolve_config_path(root, raw_path, config)
     if not path.exists():
         return {
             "check": name,
@@ -55,12 +52,12 @@ def run(input_data: dict[str, Any]) -> dict[str, Any]:
             "summary": "Research status artifact is missing.",
             "score": 0.0,
             "reasons": [{
-                "file": raw_path,
+                "file": display_path,
                 "message": "The artifact does not exist, so no routing status can be read.",
                 "suggestion": "Create the artifact and add a line like `Status: clarified`.",
                 "requires_user_input": False
             }],
-            "metadata": {"path": raw_path, "status": ""}
+            "metadata": {"path": display_path, "raw_path": raw_path, "status": "", "context": context}
         }
 
     text = path.read_text(encoding="utf-8")
@@ -73,12 +70,12 @@ def run(input_data: dict[str, Any]) -> dict[str, Any]:
             "summary": "Research routing status is missing.",
             "score": 0.0,
             "reasons": [{
-                "file": raw_path,
+                "file": display_path,
                 "message": "No `Status: <value>` line was found.",
                 "suggestion": f"Add one allowed status: {', '.join(allowed_statuses)}.",
                 "requires_user_input": False
             }],
-            "metadata": {"path": raw_path, "status": ""}
+            "metadata": {"path": display_path, "raw_path": raw_path, "status": "", "context": context}
         }
 
     passed = not allowed_statuses or status in allowed_statuses
@@ -93,16 +90,18 @@ def run(input_data: dict[str, Any]) -> dict[str, Any]:
         ),
         "score": 1.0 if passed else 0.0,
         "reasons": [] if passed else [{
-            "file": raw_path,
+            "file": display_path,
             "message": f"Status `{status}` is not in the allowed set for this workflow node.",
             "suggestion": f"Use one of: {', '.join(allowed_statuses)}.",
             "requires_user_input": False,
             "evidence": {"status": status, "allowed_statuses": allowed_statuses}
         }],
         "metadata": {
-            "path": raw_path,
+            "path": display_path,
+            "raw_path": raw_path,
             "status": status,
-            "allowed_statuses": allowed_statuses
+            "allowed_statuses": allowed_statuses,
+            "context": context
         }
     }
 

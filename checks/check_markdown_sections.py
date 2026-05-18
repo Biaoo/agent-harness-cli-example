@@ -5,10 +5,7 @@ import json
 from pathlib import Path
 from typing import Any
 
-
-def resolve(root: Path, value: str) -> Path:
-    path = Path(value)
-    return path if path.is_absolute() else root / path
+from research_paths import resolve_config_path
 
 
 def run(input_data: dict[str, Any]) -> dict[str, Any]:
@@ -35,7 +32,7 @@ def run(input_data: dict[str, Any]) -> dict[str, Any]:
             }]
         }
 
-    path = resolve(root, raw_path)
+    display_path, path, context = resolve_config_path(root, raw_path, config)
     if not path.exists():
         return {
             "check": name,
@@ -44,12 +41,12 @@ def run(input_data: dict[str, Any]) -> dict[str, Any]:
             "summary": "Markdown artifact is missing.",
             "score": 0.0,
             "reasons": [{
-                "file": raw_path,
+                "file": display_path,
                 "message": "The required Markdown artifact does not exist.",
                 "suggestion": "Create this artifact and include the required headings.",
                 "requires_user_input": False
             }],
-            "metadata": {"path": raw_path, "missing": True}
+            "metadata": {"path": display_path, "raw_path": raw_path, "missing": True, "context": context}
         }
 
     text = path.read_text(encoding="utf-8")
@@ -60,7 +57,7 @@ def run(input_data: dict[str, Any]) -> dict[str, Any]:
 
     for heading in missing_headings:
         reasons.append({
-            "file": raw_path,
+            "file": display_path,
             "message": f"Missing required heading: {heading}",
             "suggestion": f"Add a `{heading}` section with concrete research content.",
             "requires_user_input": False
@@ -68,7 +65,7 @@ def run(input_data: dict[str, Any]) -> dict[str, Any]:
 
     if too_short:
         reasons.append({
-            "file": raw_path,
+            "file": display_path,
             "message": f"Artifact has {len(text.strip())} characters, below the required minimum {min_chars}.",
             "suggestion": "Expand the artifact with concrete claims, evidence, decisions, and open blockers.",
             "requires_user_input": False,
@@ -93,7 +90,9 @@ def run(input_data: dict[str, Any]) -> dict[str, Any]:
         "score": score,
         "reasons": reasons,
         "metadata": {
-            "path": raw_path,
+            "path": display_path,
+            "raw_path": raw_path,
+            "context": context,
             "required_headings": required_headings,
             "missing_headings": missing_headings,
             "actual_chars": len(text.strip()),

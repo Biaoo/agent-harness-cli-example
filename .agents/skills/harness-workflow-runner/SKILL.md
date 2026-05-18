@@ -1,21 +1,22 @@
 ---
 name: harness-workflow-runner
-description: Use when running this repository's AI-IE Agent Harness workflow from a user research idea, producing active-node artifacts, handling step/options/choose/approve/reject, and continuing until research_complete.
+description: Use when running this repository's Research Agent Harness workflow from a user research idea, producing active-node artifacts, handling step/options/choose/approve/reject, and continuing until research_complete.
 ---
 
 # Harness Workflow Runner
 
 This repository has one workflow:
 
-- Workflow spec: `workflows/ai-ie-research.json`
-- Artifact contract: `research/ai-ie/README.md`
-- State path: `.agent-harness/ai-ie-research-state.json`
-- Report directory: `reports/research-workflow`
+- Workflow spec: `workflows/research.json`
+- Artifact contract: `research/README.md`
+- Runtime context: `research/context.json`
+- State path: `.agent-harness/research-state.json`
+- Report directory: `reports/research`
 
 Users should be able to start with a short prompt:
 
 ```text
-Research this idea with the AI-IE research workflow:
+Research this idea with the research workflow:
 
 <idea>
 ```
@@ -26,25 +27,28 @@ workflow.
 ## Operating Loop
 
 1. If state exists, continue from the active node. If no state exists, start at
-   `idea_intake`.
-2. Read the active node's artifact contract in `research/ai-ie/README.md`.
-3. Create or update the required Markdown artifact under `research/ai-ie/`.
-4. Include every required heading exactly as specified.
-5. Include one routing line: `Status: <allowed_status>`.
-6. Choose the status honestly based on evidence.
-7. Expect every stage gate to run semantic Markdown checklist checks, and key
+   `research_context`.
+2. In `research_context`, create `research/context.json` and the matching
+   `research/<topic_slug>/` directory from the user's idea.
+3. Read the active node's artifact contract in `research/README.md`.
+4. Resolve `{topic_slug}` from `research/context.json`.
+5. Create or update the required Markdown artifact under `research/<topic_slug>/`.
+6. Include every required heading exactly as specified.
+7. Include one routing line: `Status: <allowed_status>`.
+8. Choose the status honestly based on evidence.
+9. Expect every stage gate to run semantic Markdown checklist checks, and key
    research gates to run deeper quality checklists.
-8. Run or allow the Stop hook to run:
+10. Run or allow the Stop hook to run:
 
 ```bash
-agent-harness step --task workflows/ai-ie-research.json --hook-json
+agent-harness step --task workflows/research.json --hook-json
 ```
 
 If state is `choosing`, inspect options and choose:
 
 ```bash
-agent-harness options --state .agent-harness/ai-ie-research-state.json
-agent-harness choose <transition-id> --state .agent-harness/ai-ie-research-state.json --reason "<reason>"
+agent-harness options --state .agent-harness/research-state.json
+agent-harness choose <transition-id> --state .agent-harness/research-state.json --reason "<reason>"
 ```
 
 If state is `waiting`, ask the user the required question, then use

@@ -7,3 +7,6 @@ __pycache__/
 .mypy_cache/
 reports/
 .agent-harness/
+research/context.json
+research/*/
+!research/README.md

@@ -1,13 +1,46 @@
 {
-  "id": "ai_ie_main_insight_research",
+  "id": "research",
   "version": 1,
-  "description": "A main-text-insight research workflow for an AI-IE research task. The workflow either advances toward a publishable main insight or routes back for repair; it does not support SI-only digestion or downgrade publication.",
-  "initial": "idea_intake",
+  "description": "A main-text-insight research workflow. The workflow creates a topic-specific directory under research/ and either advances toward a publishable main insight or routes back for repair; it does not support SI-only digestion or downgrade publication.",
+  "initial": "research_context",
   "defaults": {
-    "state_path": ".agent-harness/ai-ie-research-state.json",
-    "report_dir": "reports/research-workflow"
+    "state_path": ".agent-harness/research-state.json",
+    "report_dir": "reports/research"
   },
   "nodes": [
+    {
+      "id": "research_context",
+      "type": "stage",
+      "title": "Research Context",
+      "artifacts": [
+        {
+          "name": "research_context",
+          "path": "research/context.json",
+          "type": "json",
+          "required": true
+        }
+      ],
+      "checks": [
+        {
+          "name": "research_context",
+          "command": ["{python}", "checks/check_research_context.py"],
+          "severity": "error",
+          "config": {
+            "path": "research/context.json"
+          }
+        }
+      ],
+      "transitions": [
+        {
+          "id": "start_idea_intake",
+          "when": "passed",
+          "action": "advance",
+          "to": "idea_intake",
+          "label": "进入 Idea Intake",
+          "prompt": "研究上下文已创建。请读取 research/context.json，并在 research/<topic_slug>/idea_brief.md 中完成 Idea Intake。"
+        }
+      ]
+    },
     {
       "id": "idea_intake",
       "type": "stage",
@@ -15,7 +48,7 @@
       "artifacts": [
         {
           "name": "idea_brief",
-          "path": "research/ai-ie/idea_brief.md",
+          "path": "research/{topic_slug}/idea_brief.md",
           "type": "markdown",
           "required": true
         }
@@ -26,7 +59,7 @@
           "command": ["{python}", "checks/check_markdown_sections.py"],
           "severity": "error",
           "config": {
-            "path": "research/ai-ie/idea_brief.md",
+            "path": "research/{topic_slug}/idea_brief.md",
             "min_chars": 900,
             "required_headings": [
               "# Idea Brief",
@@ -43,7 +76,7 @@
           "command": ["{python}", "checks/check_research_status.py"],
           "severity": "error",
           "config": {
-            "path": "research/ai-ie/idea_brief.md",
+            "path": "research/{topic_slug}/idea_brief.md",
             "allowed_statuses": ["clarified", "too_broad", "needs_user_authority"]
           }
         },
@@ -52,7 +85,7 @@
           "command": ["{python}", "checks/check_research_checklist.py"],
           "severity": "error",
           "config": {
-            "path": "research/ai-ie/idea_brief.md",
+            "path": "research/{topic_slug}/idea_brief.md",
             "checklist": "checklists/research/stage/idea_intake.md",
             "aspect": "idea_intake_stage_quality",
             "reasoning_effort": "medium"
@@ -115,7 +148,7 @@
       "artifacts": [
         {
           "name": "knowledge_map",
-          "path": "research/ai-ie/knowledge_map.md",
+          "path": "research/{topic_slug}/knowledge_map.md",
           "type": "markdown",
           "required": true
         }
@@ -126,7 +159,7 @@
           "command": ["{python}", "checks/check_markdown_sections.py"],
           "severity": "error",
           "config": {
-            "path": "research/ai-ie/knowledge_map.md",
+            "path": "research/{topic_slug}/knowledge_map.md",
             "min_chars": 1400,
             "required_headings": [
               "# World Knowledge Map",
@@ -144,7 +177,7 @@
           "command": ["{python}", "checks/check_research_status.py"],
           "severity": "error",
           "config": {
-            "path": "research/ai-ie/knowledge_map.md",
+            "path": "research/{topic_slug}/knowledge_map.md",
             "allowed_statuses": ["searching", "mapped", "partial_coverage", "blocked", "stale"]
           }
         },
@@ -153,7 +186,7 @@
           "command": ["{python}", "checks/check_research_checklist.py"],
           "severity": "error",
           "config": {
-            "path": "research/ai-ie/knowledge_map.md",
+            "path": "research/{topic_slug}/knowledge_map.md",
             "checklist": "checklists/research/stage/world_knowledge_map.md",
             "aspect": "world_knowledge_map_stage_quality",
             "reasoning_effort": "medium"
@@ -196,7 +229,7 @@
       "artifacts": [
         {
           "name": "insight_direction",
-          "path": "research/ai-ie/insight_direction.md",
+          "path": "research/{topic_slug}/insight_direction.md",
           "type": "markdown",
           "required": true
         }
@@ -207,7 +240,7 @@
           "command": ["{python}", "checks/check_markdown_sections.py"],
           "severity": "error",
           "config": {
-            "path": "research/ai-ie/insight_direction.md",
+            "path": "research/{topic_slug}/insight_direction.md",
             "min_chars": 1200,
             "required_headings": [
               "# Insight Direction Discovery",
@@ -224,7 +257,7 @@
           "command": ["{python}", "checks/check_research_status.py"],
           "severity": "error",
           "config": {
-            "path": "research/ai-ie/insight_direction.md",
+            "path": "research/{topic_slug}/insight_direction.md",
             "allowed_statuses": ["candidate", "promising", "weak", "derivative", "no_delta", "blocked"]
           }
         },
@@ -233,7 +266,7 @@
           "command": ["{python}", "checks/check_research_checklist.py"],
           "severity": "error",
           "config": {
-            "path": "research/ai-ie/insight_direction.md",
+            "path": "research/{topic_slug}/insight_direction.md",
             "checklist": "checklists/research/stage/insight_direction_discovery.md",
             "aspect": "insight_direction_stage_quality",
             "reasoning_effort": "medium"
@@ -244,7 +277,7 @@
           "command": ["{python}", "checks/check_research_checklist.py"],
           "severity": "error",
           "config": {
-            "path": "research/ai-ie/insight_direction.md",
+            "path": "research/{topic_slug}/insight_direction.md",
             "checklist": "checklists/research/deep/insight_direction_quality.md",
             "aspect": "insight_direction_deep_quality",
             "reasoning_effort": "high"
@@ -298,7 +331,7 @@
       "artifacts": [
         {
           "name": "research_design",
-          "path": "research/ai-ie/research_design.md",
+          "path": "research/{topic_slug}/research_design.md",
           "type": "markdown",
           "required": true
         }
@@ -309,7 +342,7 @@
           "command": ["{python}", "checks/check_markdown_sections.py"],
           "severity": "error",
           "config": {
-            "path": "research/ai-ie/research_design.md",
+            "path": "research/{topic_slug}/research_design.md",
             "min_chars": 1400,
             "required_headings": [
               "# Research Design",
@@ -328,7 +361,7 @@
           "command": ["{python}", "checks/check_research_status.py"],
           "severity": "error",
           "config": {
-            "path": "research/ai-ie/research_design.md",
+            "path": "research/{topic_slug}/research_design.md",
             "allowed_statuses": ["designed", "evidence_needed", "data_needed", "method_uncertain", "infeasible", "ready_for_data"]
           }
         },
@@ -337,7 +370,7 @@
           "command": ["{python}", "checks/check_research_checklist.py"],
           "severity": "error",
           "config": {
-            "path": "research/ai-ie/research_design.md",
+            "path": "research/{topic_slug}/research_design.md",
             "checklist": "checklists/research/stage/research_design.md",
             "aspect": "research_design_stage_quality",
             "reasoning_effort": "medium"
@@ -348,7 +381,7 @@
           "command": ["{python}", "checks/check_research_checklist.py"],
           "severity": "error",
           "config": {
-            "path": "research/ai-ie/research_design.md",
+            "path": "research/{topic_slug}/research_design.md",
             "checklist": "checklists/research/deep/research_design_quality.md",
             "aspect": "research_design_deep_quality",
             "reasoning_effort": "high"
@@ -388,7 +421,7 @@
       "artifacts": [
         {
           "name": "data_acquisition",
-          "path": "research/ai-ie/data_acquisition.md",
+          "path": "research/{topic_slug}/data_acquisition.md",
           "type": "markdown",
           "required": true
         }
@@ -399,7 +432,7 @@
           "command": ["{python}", "checks/check_markdown_sections.py"],
           "severity": "error",
           "config": {
-            "path": "research/ai-ie/data_acquisition.md",
+            "path": "research/{topic_slug}/data_acquisition.md",
             "min_chars": 1100,
             "required_headings": [
               "# Data Acquisition",
@@ -417,7 +450,7 @@
           "command": ["{python}", "checks/check_research_status.py"],
           "severity": "error",
           "config": {
-            "path": "research/ai-ie/data_acquisition.md",
+            "path": "research/{topic_slug}/data_acquisition.md",
             "allowed_statuses": ["searching", "acquired", "substitute_found", "insufficient", "biased", "permission_blocked", "infeasible"]
           }
         },
@@ -426,7 +459,7 @@
           "command": ["{python}", "checks/check_research_checklist.py"],
           "severity": "error",
           "config": {
-            "path": "research/ai-ie/data_acquisition.md",
+            "path": "research/{topic_slug}/data_acquisition.md",
             "checklist": "checklists/research/stage/data_acquisition.md",
             "aspect": "data_acquisition_stage_quality",
             "reasoning_effort": "medium"
@@ -437,7 +470,7 @@
           "command": ["{python}", "checks/check_research_checklist.py"],
           "severity": "error",
           "config": {
-            "path": "research/ai-ie/data_acquisition.md",
+            "path": "research/{topic_slug}/data_acquisition.md",
             "checklist": "checklists/research/deep/data_quality.md",
             "aspect": "data_acquisition_deep_quality",
             "reasoning_effort": "high"
@@ -481,7 +514,7 @@
       "artifacts": [
         {
           "name": "analysis_findings",
-          "path": "research/ai-ie/analysis_findings.md",
+          "path": "research/{topic_slug}/analysis_findings.md",
           "type": "markdown",
           "required": true
         }
@@ -492,7 +525,7 @@
           "command": ["{python}", "checks/check_markdown_sections.py"],
           "severity": "error",
           "config": {
-            "path": "research/ai-ie/analysis_findings.md",
+            "path": "research/{topic_slug}/analysis_findings.md",
             "min_chars": 1300,
             "required_headings": [
               "# Analysis Findings",
@@ -510,7 +543,7 @@
           "command": ["{python}", "checks/check_research_status.py"],
           "severity": "error",
           "config": {
-            "path": "research/ai-ie/analysis_findings.md",
+            "path": "research/{topic_slug}/analysis_findings.md",
             "allowed_statuses": ["running", "produced", "robust", "surprising", "null", "noisy", "weak", "failed"]
           }
         },
@@ -519,7 +552,7 @@
           "command": ["{python}", "checks/check_research_checklist.py"],
           "severity": "error",
           "config": {
-            "path": "research/ai-ie/analysis_findings.md",
+            "path": "research/{topic_slug}/analysis_findings.md",
             "checklist": "checklists/research/stage/analysis.md",
             "aspect": "analysis_stage_quality",
             "reasoning_effort": "medium"
@@ -530,7 +563,7 @@
           "command": ["{python}", "checks/check_research_checklist.py"],
           "severity": "error",
           "config": {
-            "path": "research/ai-ie/analysis_findings.md",
+            "path": "research/{topic_slug}/analysis_findings.md",
             "checklist": "checklists/research/deep/analysis_quality.md",
             "aspect": "analysis_deep_quality",
             "reasoning_effort": "high"
@@ -574,7 +607,7 @@
       "artifacts": [
         {
           "name": "insight_verification",
-          "path": "research/ai-ie/insight_verification.md",
+          "path": "research/{topic_slug}/insight_verification.md",
           "type": "markdown",
           "required": true
         }
@@ -585,7 +618,7 @@
           "command": ["{python}", "checks/check_markdown_sections.py"],
           "severity": "error",
           "config": {
-            "path": "research/ai-ie/insight_verification.md",
+            "path": "research/{topic_slug}/insight_verification.md",
             "min_chars": 1300,
             "required_headings": [
               "# Insight Verification",
@@ -603,7 +636,7 @@
           "command": ["{python}", "checks/check_research_status.py"],
           "severity": "error",
           "config": {
-            "path": "research/ai-ie/insight_verification.md",
+            "path": "research/{topic_slug}/insight_verification.md",
             "allowed_statuses": ["confirmed_insight", "weak", "already_known", "derivative", "no_delta", "contradicted", "blocked"]
           }
         },
@@ -612,7 +645,7 @@
           "command": ["{python}", "checks/check_research_checklist.py"],
           "severity": "error",
           "config": {
-            "path": "research/ai-ie/insight_verification.md",
+            "path": "research/{topic_slug}/insight_verification.md",
             "checklist": "checklists/research/stage/insight_verification.md",
             "aspect": "insight_verification_stage_quality",
             "reasoning_effort": "medium"
@@ -623,7 +656,7 @@
           "command": ["{python}", "checks/check_research_checklist.py"],
           "severity": "error",
           "config": {
-            "path": "research/ai-ie/insight_verification.md",
+            "path": "research/{topic_slug}/insight_verification.md",
             "checklist": "checklists/research/deep/insight_verification_quality.md",
             "aspect": "insight_verification_deep_quality",
             "reasoning_effort": "high"
@@ -683,7 +716,7 @@
       "artifacts": [
         {
           "name": "results_architecture",
-          "path": "research/ai-ie/results_architecture.md",
+          "path": "research/{topic_slug}/results_architecture.md",
           "type": "markdown",
           "required": true
         }
@@ -694,7 +727,7 @@
           "command": ["{python}", "checks/check_markdown_sections.py"],
           "severity": "error",
           "config": {
-            "path": "research/ai-ie/results_architecture.md",
+            "path": "research/{topic_slug}/results_architecture.md",
             "min_chars": 1000,
             "required_headings": [
               "# Results Architecture",
@@ -711,7 +744,7 @@
           "command": ["{python}", "checks/check_research_status.py"],
           "severity": "error",
           "config": {
-            "path": "research/ai-ie/results_architecture.md",
+            "path": "research/{topic_slug}/results_architecture.md",
             "allowed_statuses": ["admitted", "repair_needed", "blocked"]
           }
         },
@@ -720,7 +753,7 @@
           "command": ["{python}", "checks/check_research_checklist.py"],
           "severity": "error",
           "config": {
-            "path": "research/ai-ie/results_architecture.md",
+            "path": "research/{topic_slug}/results_architecture.md",
             "checklist": "checklists/research/stage/results_architecture.md",
             "aspect": "results_architecture_stage_quality",
             "reasoning_effort": "medium"
@@ -767,7 +800,7 @@
       "artifacts": [
         {
           "name": "manuscript",
-          "path": "research/ai-ie/manuscript.md",
+          "path": "research/{topic_slug}/manuscript.md",
           "type": "markdown",
           "required": true
         }
@@ -778,7 +811,7 @@
           "command": ["{python}", "checks/check_markdown_sections.py"],
           "severity": "error",
           "config": {
-            "path": "research/ai-ie/manuscript.md",
+            "path": "research/{topic_slug}/manuscript.md",
             "min_chars": 1600,
             "required_headings": [
               "# Manuscript Draft",
@@ -797,7 +830,7 @@
           "command": ["{python}", "checks/check_research_status.py"],
           "severity": "error",
           "config": {
-            "path": "research/ai-ie/manuscript.md",
+            "path": "research/{topic_slug}/manuscript.md",
             "allowed_statuses": ["drafting", "figures_synced", "needs_repair", "blocked"]
           }
         },
@@ -806,7 +839,7 @@
           "command": ["{python}", "checks/check_research_checklist.py"],
           "severity": "error",
           "config": {
-            "path": "research/ai-ie/manuscript.md",
+            "path": "research/{topic_slug}/manuscript.md",
             "checklist": "checklists/research/deep/manuscript_argument_quality.md",
             "aspect": "manuscript_argument_deep_quality",
             "reasoning_effort": "high"
@@ -838,7 +871,7 @@
       "artifacts": [
         {
           "name": "reader_evidence_audit",
-          "path": "research/ai-ie/reader_evidence_audit.md",
+          "path": "research/{topic_slug}/reader_evidence_audit.md",
           "type": "markdown",
           "required": true
         }
@@ -849,7 +882,7 @@
           "command": ["{python}", "checks/check_markdown_sections.py"],
           "severity": "error",
           "config": {
-            "path": "research/ai-ie/reader_evidence_audit.md",
+            "path": "research/{topic_slug}/reader_evidence_audit.md",
             "min_chars": 1000,
             "required_headings": [
               "# Reader / Evidence Audit",
@@ -866,7 +899,7 @@
           "command": ["{python}", "checks/check_research_status.py"],
           "severity": "error",
           "config": {
-            "path": "research/ai-ie/reader_evidence_audit.md",
+            "path": "research/{topic_slug}/reader_evidence_audit.md",
             "allowed_statuses": ["pending", "passed", "needs_repair", "blocked"]
           }
         },
@@ -875,7 +908,7 @@
           "command": ["{python}", "checks/check_research_checklist.py"],
           "severity": "error",
           "config": {
-            "path": "research/ai-ie/reader_evidence_audit.md",
+            "path": "research/{topic_slug}/reader_evidence_audit.md",
             "checklist": "checklists/research/stage/reader_evidence_audit.md",
             "aspect": "reader_evidence_audit_stage_quality",
             "reasoning_effort": "medium"
@@ -908,7 +941,7 @@
       "artifacts": [
         {
           "name": "submission_package",
-          "path": "research/ai-ie/submission_package.md",
+          "path": "research/{topic_slug}/submission_package.md",
           "type": "markdown",
           "required": true
         }
@@ -919,7 +952,7 @@
           "command": ["{python}", "checks/check_markdown_sections.py"],
           "severity": "error",
           "config": {
-            "path": "research/ai-ie/submission_package.md",
+            "path": "research/{topic_slug}/submission_package.md",
             "min_chars": 900,
             "required_headings": [
               "# Submission Package",
@@ -938,7 +971,7 @@
           "command": ["{python}", "checks/check_research_status.py"],
           "severity": "error",
           "config": {
-            "path": "research/ai-ie/submission_package.md",
+            "path": "research/{topic_slug}/submission_package.md",
             "allowed_statuses": ["package_ready", "waiting_user_authority", "submitted_ready", "blocked"]
           }
         },
@@ -947,7 +980,7 @@
           "command": ["{python}", "checks/check_research_checklist.py"],
           "severity": "error",
           "config": {
-            "path": "research/ai-ie/submission_package.md",
+            "path": "research/{topic_slug}/submission_package.md",
             "checklist": "checklists/research/stage/submission_package.md",
             "aspect": "submission_package_stage_quality",
             "reasoning_effort": "medium"

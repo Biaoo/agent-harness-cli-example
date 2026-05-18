@@ -1,12 +1,12 @@
-# AI-IE Main-Insight Research Workflow
+# Research Workflow Artifact Contract
 
-This directory is the workspace for the workflow example in
-`workflows/ai-ie-research.json`.
+This directory contains the artifact contract for the workflow example in
+`workflows/research.json`.
 
-The task is to drive an AI-IE research idea through a full research pipeline:
-idea intake, knowledge mapping, insight discovery, research design, data
-acquisition, analysis, insight verification, results architecture, manuscript
-drafting, reader/evidence audit, and submission packaging.
+The workflow drives a research idea through topic setup, idea intake, knowledge
+mapping, insight discovery, research design, data acquisition, analysis,
+insight verification, results architecture, manuscript drafting,
+reader/evidence audit, and submission packaging.
 
 The hard routing rule is:
 
@@ -17,27 +17,32 @@ Do not route to SI-only digestion, downgrade publication, or a weaker fallback p
 
 ## How To Work
 
-Start a Codex session in the repository root and ask it to run the AI-IE
-research workflow. The first active node is `idea_intake`; Codex should create:
+Start a Codex session in the repository root and ask it to run the research
+workflow. The first active node is `research_context`; Codex should create:
 
 ```text
-research/ai-ie/idea_brief.md
+research/context.json
+research/<topic_slug>/
 ```
+
+`topic_slug` is a stable lower-kebab ASCII slug derived from the user's research
+idea. Every later artifact goes under that topic directory.
 
 When Codex tries to stop, the project Stop hook runs:
 
 ```bash
-agent-harness step --task workflows/ai-ie-research.json --hook-json
+agent-harness step --task workflows/research.json --hook-json
 ```
 
 The harness validates the active node, updates
-`.agent-harness/ai-ie-research-state.json`, writes a report under
-`reports/research-workflow/`, and blocks Codex until the workflow reaches the
+`.agent-harness/research-state.json`, writes a report under
+`reports/research/`, and blocks Codex until the workflow reaches the
 terminal node.
 
 ## Status Contract
 
-Every workflow artifact must include a line like:
+Every Markdown workflow artifact after `research_context` must include a line
+like:
 
 ```text
 Status: clarified
@@ -64,10 +69,22 @@ Checklist checks call local `codex exec` to fill Markdown checklists from
 
 ## Artifact Contracts
 
+`research_context`
+
+```text
+research/context.json
+Required JSON fields:
+topic_title: concise human-readable research topic
+topic_slug: lower-kebab ASCII slug, 3-64 characters
+research_dir: research/<topic_slug>
+Required directory:
+research/<topic_slug>/
+```
+
 `idea_intake`
 
 ```text
-research/ai-ie/idea_brief.md
+research/{topic_slug}/idea_brief.md
 Status: clarified | too_broad | needs_user_authority
 Required headings:
 # Idea Brief
@@ -81,7 +98,7 @@ Required headings:
 `world_knowledge_map`
 
 ```text
-research/ai-ie/knowledge_map.md
+research/{topic_slug}/knowledge_map.md
 Status: searching | mapped | partial_coverage | blocked | stale
 Required headings:
 # World Knowledge Map
@@ -96,7 +113,7 @@ Required headings:
 `insight_direction_discovery`
 
 ```text
-research/ai-ie/insight_direction.md
+research/{topic_slug}/insight_direction.md
 Status: candidate | promising | weak | derivative | no_delta | blocked
 Required headings:
 # Insight Direction Discovery
@@ -110,7 +127,7 @@ Required headings:
 `research_design`
 
 ```text
-research/ai-ie/research_design.md
+research/{topic_slug}/research_design.md
 Status: designed | evidence_needed | data_needed | method_uncertain | infeasible | ready_for_data
 Required headings:
 # Research Design
@@ -126,7 +143,7 @@ Required headings:
 `data_acquisition`
 
 ```text
-research/ai-ie/data_acquisition.md
+research/{topic_slug}/data_acquisition.md
 Status: searching | acquired | substitute_found | insufficient | biased | permission_blocked | infeasible
 Required headings:
 # Data Acquisition
@@ -141,7 +158,7 @@ Required headings:
 `analysis`
 
 ```text
-research/ai-ie/analysis_findings.md
+research/{topic_slug}/analysis_findings.md
 Status: running | produced | robust | surprising | null | noisy | weak | failed
 Required headings:
 # Analysis Findings
@@ -156,7 +173,7 @@ Required headings:
 `insight_verification`
 
 ```text
-research/ai-ie/insight_verification.md
+research/{topic_slug}/insight_verification.md
 Status: confirmed_insight | weak | already_known | derivative | no_delta | contradicted | blocked
 Required headings:
 # Insight Verification
@@ -171,7 +188,7 @@ Required headings:
 `results_architecture`
 
 ```text
-research/ai-ie/results_architecture.md
+research/{topic_slug}/results_architecture.md
 Status: admitted | repair_needed | blocked
 Required headings:
 # Results Architecture
@@ -185,7 +202,7 @@ Required headings:
 `figures_manuscript`
 
 ```text
-research/ai-ie/manuscript.md
+research/{topic_slug}/manuscript.md
 Status: drafting | figures_synced | needs_repair | blocked
 Required headings:
 # Manuscript Draft
@@ -201,7 +218,7 @@ Required headings:
 `reader_evidence_audit`
 
 ```text
-research/ai-ie/reader_evidence_audit.md
+research/{topic_slug}/reader_evidence_audit.md
 Status: pending | passed | needs_repair | blocked
 Required headings:
 # Reader / Evidence Audit
@@ -215,7 +232,7 @@ Required headings:
 `submission_package`
 
 ```text
-research/ai-ie/submission_package.md
+research/{topic_slug}/submission_package.md
 Status: package_ready | waiting_user_authority | submitted_ready | blocked
 Required headings:
 # Submission Package
@@ -233,24 +250,24 @@ Required headings:
 Validate the workflow:
 
 ```bash
-agent-harness validate-workflow --task workflows/ai-ie-research.json
+agent-harness validate-workflow --task workflows/research.json
 ```
 
 Run one workflow step:
 
 ```bash
-agent-harness step --task workflows/ai-ie-research.json --hook-json
+agent-harness step --task workflows/research.json --hook-json
 ```
 
 Inspect state:
 
 ```bash
-agent-harness status --state .agent-harness/ai-ie-research-state.json
+agent-harness status --state .agent-harness/research-state.json
 ```
 
 If a gate enters `choosing`, inspect and choose:
 
 ```bash
-agent-harness options --state .agent-harness/ai-ie-research-state.json
-agent-harness choose <transition-id> --state .agent-harness/ai-ie-research-state.json --reason "why this route is appropriate"
+agent-harness options --state .agent-harness/research-state.json
+agent-harness choose <transition-id> --state .agent-harness/research-state.json --reason "why this route is appropriate"
 ```

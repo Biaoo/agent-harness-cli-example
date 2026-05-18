@@ -2,15 +2,16 @@
 
 [English](README.md) | [简体中文](README.zh-CN.md)
 
-本仓库是 [Biaoo/agent-harness-cli](https://github.com/Biaoo/agent-harness-cli) 的可运行示例，演示 workflow controller 模式如何驱动一个 AI-IE 研究任务，通过显式状态、checks、路由决策和 Codex Stop hook continuation 完成长流程控制。
+本仓库是 [Biaoo/agent-harness-cli](https://github.com/Biaoo/agent-harness-cli) 的可运行示例，演示 workflow controller 模式如何驱动一个 research 任务，通过显式状态、checks、路由决策和 Codex Stop hook continuation 完成长流程控制。
 
 这个仓库现在只保留 research workflow 示例。
 
 ## Workflow 目标
 
-workflow 将一个粗略的 AI-IE research idea 推进成完整研究交付包：
+workflow 将一个粗略的 research idea 推进成按主题隔离的完整研究交付包：
 
 ```text
+Research Context
 Idea Intake
 World Knowledge Map
 Insight Direction Discovery
@@ -34,25 +35,39 @@ Research Complete
 
 ## Harness Engineering Flow
 
-1. Codex 修改 `research/ai-ie/` 下当前 active 节点要求的研究 artifact。
-2. 项目级 Stop hook 运行 `agent-harness step`。
-3. workflow controller 验收当前 active node 的 artifact 结构和 `Status:` 值。
-4. 节点未通过时，hook block，并告诉 Codex 需要修复什么。
-5. 节点通过且只有一个 transition 匹配时，workflow state 自动推进，并用 block 提示下一阶段。
-6. 多个 transition 同时匹配时，state 进入 `choosing`；Codex 需要查看 `agent-harness options` 并运行 `agent-harness choose`。
-7. 只有进入 terminal workflow node 后，Stop hook 才不再 block。
+1. Codex 先创建 `research/context.json`，记录本次研究主题元数据。
+2. Codex 修改 `research/<topic_slug>/` 下当前 active 节点要求的研究 artifact。
+3. 项目级 Stop hook 运行 `agent-harness step`。
+4. workflow controller 验收当前 active node 的 artifact 结构和 `Status:` 值。
+5. 节点未通过时，hook block，并告诉 Codex 需要修复什么。
+6. 节点通过且只有一个 transition 匹配时，workflow state 自动推进，并用 block 提示下一阶段。
+7. 多个 transition 同时匹配时，state 进入 `choosing`；Codex 需要查看 `agent-harness options` 并运行 `agent-harness choose`。
+8. 只有进入 terminal workflow node 后，Stop hook 才不再 block。
 
 ## 试运行
 
 在本目录启动 Codex session，并输入：
 
 ```text
-Research this idea with the AI-IE research workflow:
+Research this idea with the research workflow:
 
 <你的研究想法>
 ```
 
 `AGENTS.md` 已经包含项目级 workflow 操作规则，所以用户不需要在提示词里重复粘贴 workflow 协议。
+
+第一步 Codex 会创建：
+
+```json
+{
+  "topic_title": "可读的研究主题",
+  "topic_slug": "lower-kebab-topic-slug",
+  "research_dir": "research/lower-kebab-topic-slug"
+}
+```
+
+workflow 中后续 artifact path 使用 `research/{topic_slug}/...`；check 脚本会从
+`research/context.json` 展开这个占位符。
 
 当 Codex 准备停止时，`.codex/hooks.json` 会运行：
 
@@ -63,7 +78,7 @@ bash "$(git rev-parse --show-toplevel)/.codex/hooks/run-agent-harness-check.sh"
 该脚本调用：
 
 ```bash
-agent-harness step --task workflows/ai-ie-research.json --report-id research-latest --hook-json
+agent-harness step --task workflows/research.json --report-id research-latest --hook-json
 ```
 
 hook 会优先使用已安装的 `agent-harness`，否则回退到：
@@ -77,32 +92,32 @@ uvx --from agent-harness-cli==0.1.2 agent-harness
 验证 workflow：
 
 ```bash
-agent-harness validate-workflow --task workflows/ai-ie-research.json
+agent-harness validate-workflow --task workflows/research.json
 ```
 
 执行一次 workflow step：
 
 ```bash
-agent-harness step --task workflows/ai-ie-research.json --hook-json
+agent-harness step --task workflows/research.json --hook-json
 ```
 
 查看 state：
 
 ```bash
-agent-harness status --state .agent-harness/ai-ie-research-state.json
+agent-harness status --state .agent-harness/research-state.json
 ```
 
 查看并选择 model-choice transition：
 
 ```bash
-agent-harness options --state .agent-harness/ai-ie-research-state.json
-agent-harness choose <transition-id> --state .agent-harness/ai-ie-research-state.json --reason "why this route is appropriate"
+agent-harness options --state .agent-harness/research-state.json
+agent-harness choose <transition-id> --state .agent-harness/research-state.json --reason "why this route is appropriate"
 ```
 
 查看最新 workflow report：
 
 ```bash
-agent-harness view research-latest --report-dir reports/research-workflow --failed-only
+agent-harness view research-latest --report-dir reports/research --failed-only
 ```
 
 ## 验收面
@@ -119,11 +134,15 @@ workflow 使用这些 check 脚本：
 
 | Check | 作用 | 要求来源 |
 | --- | --- | --- |
-| `check_markdown_sections.py` | 检查当前 Markdown artifact 是否存在、是否包含必需标题、内容是否达到最低信息量。 | `workflows/ai-ie-research.json` |
-| `check_research_status.py` | 读取 artifact 中的 `Status: <value>`，并把它作为 `metadata.status` 提供给 transition 条件。 | `workflows/ai-ie-research.json` |
+| `check_research_context.py` | 检查 `research/context.json` 和对应主题目录。 | `research/context.json` |
+| `check_markdown_sections.py` | 检查当前 Markdown artifact 是否存在、是否包含必需标题、内容是否达到最低信息量。 | `workflows/research.json` |
+| `check_research_status.py` | 读取 artifact 中的 `Status: <value>`，并把它作为 `metadata.status` 提供给 transition 条件。 | `workflows/research.json` |
 | `check_research_checklist.py` | 调用本地 `codex exec` 填写 Markdown checklist，再把 checked/unchecked items 解析成 harness JSON。 | `checklists/research/` |
 
 workflow graph 负责路由。结构和状态检查是确定性的。Checklist checks 是语义质量 gate；只有做 deterministic-only 调试时才设置 `AGENT_HARNESS_ENABLE_LLM=0`。
+
+`research/context.json` 是运行时路径解析器。同一个 checkout 可以按不同
+`topic_slug` 运行多个主题，产物隔离在 `research/<topic_slug>/` 下。
 
 ## 项目结构
 
@@ -135,17 +154,21 @@ AGENTS.md                            Codex 项目级操作说明。
   hooks.json                         项目级 Stop hook 配置。
   hooks/run-agent-harness-check.sh   workflow Stop hook 入口。
 checks/
+  check_research_context.py          运行时主题 context 检查。
   check_markdown_sections.py         Markdown artifact 结构检查。
   check_research_status.py           workflow 路由状态检查。
   check_research_checklist.py        Markdown checklist 语义/深层质量 gate。
   local_codex_judge.py               本地 Codex checklist judge helper。
+  research_paths.py                  共享主题路径解析器。
 checklists/
   research/stage/                    阶段完成度 checklist 模板。
   research/deep/                     深层研究质量 checklist 模板。
 workflows/
-  ai-ie-research.json                研究 workflow graph。
+  research.json                      研究 workflow graph。
 research/
-  ai-ie/README.md                    artifact 契约和允许状态。
+  README.md                          artifact 契约和允许状态。
+  context.json                       Codex 运行时生成的主题 context。
+  <topic_slug>/                      按主题隔离的研究产物。
 pyproject.toml                       示例包元数据。
 ```
 
@@ -154,6 +177,8 @@ pyproject.toml                       示例包元数据。
 ```text
 .agent-harness/
 reports/
+research/context.json
+research/<topic_slug>/
 ```
 
 ## 设计说明
