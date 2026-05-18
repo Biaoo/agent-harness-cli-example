@@ -63,11 +63,12 @@ The workflow has four gate layers:
   complete and the status is justified;
 - deep quality: critical gates check research-object modeling, true information
   delta, method-claim match, data provenance, evidence boundaries, alternative
-  explanations, generated figure/table quality, and manuscript argument carrying
-  capacity.
+  explanations, generated figure/table quality, publication-style prose, and
+  manuscript argument carrying capacity.
 - evidence controls: deterministic CSV and link checks require source evidence
   packs, data fitness matrices, claim-evidence traces, calibrated claim
-  strength, generated visual assets, and a final aggregate quality report.
+  strength, generated visual assets, reader-facing citations/references, and a
+  final aggregate quality report.
 
 Key evidence-control artifacts:
 
@@ -89,6 +90,15 @@ assets under `research/<topic_slug>/figures/`, write `figure_manifest.csv`, and
 reference each asset from `manuscript.md`. Use Python for data-derived visuals
 and computed tables; use `imagegen` only for conceptual mechanism visuals or
 graphical abstracts where numeric fidelity is not required.
+
+The manuscript's main reader-facing sections (`Abstract`, `Introduction`,
+`Methods`, `Results`, `Discussion`, `Conclusion`) must not leak harness
+mechanics. Do not mention workflow, checks, checklist files, local paths,
+`source_evidence_pack.csv`, `claim_evidence_trace.csv`,
+`data_fitness_matrix.csv`, `figure_manifest.csv`, internal source IDs, internal
+claim IDs, or figure asset IDs in those sections. Put file paths and manifest
+details only in `Figures and Tables`, use reader-facing citations in the body,
+and add `References`.
 
 Content quality checks use local `codex exec` to fill Markdown checklists, then
 the check script parses the checklist into harness JSON. For deterministic-only

@@ -18,6 +18,18 @@
   Reason:
   Suggestion:
 
+- [ ] item_id: no_harness_artifact_leakage
+  Criterion: The reader-facing manuscript body does not expose harness internals such as workflow, checks, local file paths, source IDs, claim IDs, or CSV artifact names.
+  Evidence:
+  Reason:
+  Suggestion:
+
+- [ ] item_id: results_have_named_findings
+  Criterion: The Results section uses named conceptual findings or mechanism steps instead of numbered result groups, asset IDs, or audit categories.
+  Evidence:
+  Reason:
+  Suggestion:
+
 - [ ] item_id: figures_serve_claim
   Criterion: Generated figures and tables are embedded in the manuscript and assigned claim-supporting roles; the manuscript does not pass with only a figure plan.
   Evidence:
@@ -26,6 +38,12 @@
 
 - [ ] item_id: reader_can_restate_contribution
   Criterion: A reader could restate why this paper must exist and what it changes about the field.
+  Evidence:
+  Reason:
+  Suggestion:
+
+- [ ] item_id: references_are_publication_ready
+  Criterion: The manuscript contains reader-facing citations and a References section rather than requiring the reader to inspect source registers or internal evidence files.
   Evidence:
   Reason:
   Suggestion:

@@ -137,8 +137,8 @@ The workflow uses four layers of gates:
 | --- | --- | --- |
 | Structure | Ensure the active artifact exists, has required headings, and has enough substance to inspect. | `check_markdown_sections.py` |
 | Stage semantics | Verify that the stage is genuinely complete and the chosen `Status:` is justified. | `check_research_checklist.py` + `checklists/research/stage/*.md` |
-| Deep research quality | Check research-object modeling, true information delta, method-claim match, data provenance, evidence boundaries, alternative explanations, figure/table quality, and manuscript argument quality. | `check_research_checklist.py` + `checklists/research/deep/*.md` |
-| Evidence controls | Require source evidence packs, data fitness matrices, claim-evidence traces, generated figure/table assets, claim-strength calibration, link integrity, overclaim review, and final quality reporting. | `check_research_csv_contract.py`, `check_research_trace_links.py`, `check_research_figure_assets.py`, dedicated checklists |
+| Deep research quality | Check research-object modeling, true information delta, method-claim match, data provenance, evidence boundaries, alternative explanations, figure/table quality, publication-style prose, and manuscript argument quality. | `check_research_checklist.py` + `checklists/research/deep/*.md` |
+| Evidence controls | Require source evidence packs, data fitness matrices, claim-evidence traces, generated figure/table assets, reader-facing citations/references, claim-strength calibration, link integrity, overclaim review, and final quality reporting. | `check_research_csv_contract.py`, `check_research_trace_links.py`, `check_research_figure_assets.py`, `check_research_manuscript_publication_style.py`, dedicated checklists |
 
 The workflow uses these check scripts:
 
@@ -151,6 +151,7 @@ The workflow uses these check scripts:
 | `check_research_trace_links.py` | Verifies claim trace rows reference existing source IDs and data-fitness claim IDs. | `source_evidence_pack.csv`, `claim_evidence_trace.csv`, `data_fitness_matrix.csv` |
 | `check_research_figure_assets.py` | Verifies generated figure/table assets exist under the topic figures directory and are referenced by the manuscript. | `figure_manifest.csv`, `manuscript.md` |
 | `check_research_manuscript_form.py` | Verifies the manuscript is developed as paper-style prose instead of memo bullets or a figure plan. | `manuscript.md` |
+| `check_research_manuscript_publication_style.py` | Verifies the reader-facing manuscript body does not leak harness internals and includes publication-style citations, references, and named result subsections. | `manuscript.md` |
 | `check_research_checklist.py` | Calls local `codex exec` to fill a Markdown checklist, then parses checked/unchecked items into harness JSON. | `checklists/research/` |
 
 The workflow graph owns routing. Structure and status checks are deterministic.
@@ -178,6 +179,8 @@ checks/
   check_research_trace_links.py      Claim/source/data link integrity check.
   check_research_figure_assets.py    Generated figure/table asset check.
   check_research_manuscript_form.py  Paper-form manuscript check.
+  check_research_manuscript_publication_style.py
+                                      Reader-facing manuscript style check.
   check_research_checklist.py        Markdown checklist semantic/deep gate.
   local_codex_judge.py               Local Codex checklist judge helper.
   research_paths.py                  Shared topic path resolver.

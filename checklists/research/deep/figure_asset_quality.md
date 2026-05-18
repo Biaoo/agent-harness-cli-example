@@ -24,6 +24,12 @@
   Reason:
   Suggestion:
 
+- [ ] item_id: visuals_have_substantive_content
+  Criterion: Each figure or table makes a substantive finding, comparison, mechanism, or boundary visible to the reader instead of only restating source IDs, claim IDs, or workflow audit status.
+  Evidence:
+  Reason:
+  Suggestion:
+
 - [ ] item_id: no_visual_overclaim
   Criterion: Visual encodings do not imply causal strength, representativeness, precision, or coverage beyond the claim trace and data fitness matrix.
   Evidence:

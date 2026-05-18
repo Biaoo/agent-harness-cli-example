@@ -77,4 +77,10 @@ write `figure_manifest.csv`, and cite each asset ID/title/path in
 Use imagegen only for conceptual mechanism visuals or graphical abstracts where
 exact numeric fidelity is not required.
 
+Keep the main manuscript body publication-facing. In Abstract, Introduction,
+Methods, Results, Discussion, and Conclusion, do not mention workflow, checks,
+checklists, local paths, internal CSV artifact names, source IDs, claim IDs, or
+figure asset IDs. Put manifest paths only in Figures and Tables. Use
+reader-facing citations and include a References section.
+
 Do not edit workflow specs or checks during normal operation.

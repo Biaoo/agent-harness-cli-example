@@ -61,11 +61,12 @@ The workflow does not rely on structure alone. Critical nodes use layered gates:
    whether the artifact can honestly enter the next stage.
 3. Deep quality checklist checks verify research-object modeling, true
    information delta, method-claim fit, data provenance, evidence boundaries,
-   alternative explanations, real figure/table assets, and whether the insight
-   can carry a main paper.
+   alternative explanations, real figure/table assets, publication-style prose,
+   and whether the insight can carry a main paper.
 4. Evidence-control checks require auditable source rows, claim-evidence traces,
    data fitness judgments, claim-strength calibration, generated visual assets,
-   overclaim review, and a final aggregate quality report.
+   reader-facing citations/references, overclaim review, and a final aggregate
+   quality report.
 
 Checklist checks call local `codex exec` to fill Markdown checklists from
 `checklists/research/`, then parse the checklist into harness JSON. Set
@@ -236,16 +237,28 @@ Required headings:
 ## Figures and Tables
 ## Claim Map
 ## Evidence Boundaries
+## References
 ## Status
 Required figure_manifest.csv columns:
 asset_id,asset_type,title,path,generation_method,claim_ids,source_ids,caption,status
+
+Publication-style manuscript requirements:
+- Abstract, Introduction, Methods, Results, Discussion, and Conclusion must be
+  reader-facing paper prose.
+- Main prose must not mention workflow, checklist, local paths, `*.csv` artifact
+  names, source IDs, claim IDs, or manifest asset IDs.
+- Results should use named conceptual findings or mechanism steps, not numbered
+  result groups or asset-by-asset narration.
+- Use reader-facing citations and add `## References`; do not leave citations
+  only as internal source IDs.
 
 Figure/table requirements:
 - Save generated assets under `research/{topic_slug}/figures/`.
 - Use `python` for data-derived figures, matrices, charts, and computed tables.
 - Use `imagegen` only for conceptual mechanism figures, graphical abstracts, or
   non-numeric explanatory visuals.
-- Reference every manifest `asset_id`, title, and file path in the manuscript.
+- Reference every manifest `asset_id`, title, and file path in the manuscript's
+  `## Figures and Tables` section.
 - A manuscript cannot pass with only a `Figure Plan`; it must include actual
   generated assets and paper-style prose.
 ```

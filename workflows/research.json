@@ -929,7 +929,7 @@
           "action": "advance",
           "to": "figures_manuscript",
           "label": "进入 Figures + Manuscript",
-          "prompt": "结果链和图表蓝图已建立。请先生成真实图表资产，再写论文式正文。数据图、矩阵图和对比表优先使用 Python/matplotlib/plotly 等可复现绘图；机制图、概念图或 graphical abstract 可使用 imagegen，但必须保存到 research/<topic_slug>/figures/。同时创建 figure_manifest.csv，正文必须引用每个 asset 的文件路径、caption 和 claim role。"
+          "prompt": "结果链和图表蓝图已建立。请先生成真实图表资产，再写论文式正文。数据图、矩阵图和对比表优先使用 Python/matplotlib/plotly 等可复现绘图；机制图、概念图或 graphical abstract 可使用 imagegen，但必须保存到 research/<topic_slug>/figures/。同时创建 figure_manifest.csv。主文的 Abstract/Introduction/Methods/Results/Discussion/Conclusion 必须面向外部读者，不得泄露 workflow/checklist/claim ID/source ID/本地文件路径；图表文件路径只放在 Figures and Tables 区域。正文引用使用读者可解析的 author-year、legal-document 或编号引用，并补充 References。"
         },
         {
           "id": "repair_results_architecture",
@@ -992,6 +992,7 @@
               "## Figures and Tables",
               "## Claim Map",
               "## Evidence Boundaries",
+              "## References",
               "## Status"
             ]
           }
@@ -1022,6 +1023,22 @@
               {"heading": "Results", "min_paragraphs": 6},
               {"heading": "Discussion", "min_paragraphs": 4},
               {"heading": "Conclusion", "min_paragraphs": 2}
+            ]
+          }
+        },
+        {
+          "name": "manuscript_publication_style",
+          "command": ["{python}", "checks/check_research_manuscript_publication_style.py"],
+          "severity": "error",
+          "config": {
+            "path": "research/{topic_slug}/manuscript.md",
+            "main_sections": ["Abstract", "Introduction", "Methods", "Results", "Discussion", "Conclusion"],
+            "required_reference_section": true,
+            "min_reference_entries": 8,
+            "min_reader_facing_citations": 6,
+            "subsection_requirements": [
+              {"section": "Results", "min_subsections": 3},
+              {"section": "Discussion", "min_subsections": 2}
             ]
           }
         },
@@ -1094,6 +1111,17 @@
           }
         },
         {
+          "name": "manuscript_publication_deep_quality",
+          "command": ["{python}", "checks/check_research_checklist.py"],
+          "severity": "error",
+          "config": {
+            "path": "research/{topic_slug}/manuscript.md",
+            "checklist": "checklists/research/deep/manuscript_publication_quality.md",
+            "aspect": "manuscript_publication_deep_quality",
+            "reasoning_effort": "high"
+          }
+        },
+        {
           "name": "figure_asset_deep_quality",
           "command": ["{python}", "checks/check_research_checklist.py"],
           "severity": "error",
@@ -1130,7 +1158,7 @@
           "when": "checks.manuscript_status.metadata.status == \"drafting\" || checks.manuscript_status.metadata.status == \"needs_repair\" || checks.manuscript_status.metadata.status == \"blocked\"",
           "action": "repeat",
           "label": "修正文稿和图表",
-          "prompt": "请继续修复正文、图表、claim map 或证据边界。不要只写 Figure Plan；必须生成 figure_manifest.csv 中列出的图表文件，并把正文扩展为论文式叙述。"
+          "prompt": "请继续修复正文、图表、claim map、References 或证据边界。不要只写 Figure Plan；必须生成 figure_manifest.csv 中列出的图表文件，并把正文扩展为面向外部读者的论文式叙述。主文不要出现 workflow/checklist/source_evidence_pack/claim_evidence_trace/data_fitness_matrix/figure_manifest、source IDs、claim IDs 或本地文件路径。"
         }
       ]
     },
