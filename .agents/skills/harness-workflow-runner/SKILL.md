@@ -32,7 +32,9 @@ workflow.
 4. Include every required heading exactly as specified.
 5. Include one routing line: `Status: <allowed_status>`.
 6. Choose the status honestly based on evidence.
-7. Run or allow the Stop hook to run:
+7. Expect every stage gate to run semantic Markdown checklist checks, and key
+   research gates to run deeper quality checklists.
+8. Run or allow the Stop hook to run:
 
 ```bash
 agent-harness step --task workflows/ai-ie-research.json --hook-json
@@ -47,5 +49,8 @@ agent-harness choose <transition-id> --state .agent-harness/ai-ie-research-state
 
 If state is `waiting`, ask the user the required question, then use
 `approve` or `reject` with a concrete reason.
+
+The quality gates are intentionally stricter than format checks. If a checklist
+blocks, repair the research logic rather than only editing prose.
 
 Do not edit workflow specs or checks during normal operation.

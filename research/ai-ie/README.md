@@ -46,6 +46,22 @@ Status: clarified
 The status drives routing. Use only the statuses allowed by the current
 workflow node.
 
+## Quality Gate Layers
+
+The workflow does not rely on structure alone. Critical nodes use layered gates:
+
+1. Structure checks verify artifact existence, required headings, and minimum
+   content length.
+2. Stage checklist checks verify stage completion, status justification, and
+   whether the artifact can honestly enter the next stage.
+3. Deep quality checklist checks verify research-object modeling, true
+   information delta, method-claim fit, data provenance, evidence boundaries,
+   alternative explanations, and whether the insight can carry a main paper.
+
+Checklist checks call local `codex exec` to fill Markdown checklists from
+`checklists/research/`, then parse the checklist into harness JSON. Set
+`AGENT_HARNESS_ENABLE_LLM=0` only when debugging deterministic checks.
+
 ## Artifact Contracts
 
 `idea_intake`

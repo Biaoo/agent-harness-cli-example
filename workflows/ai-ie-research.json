@@ -46,6 +46,17 @@
             "path": "research/ai-ie/idea_brief.md",
             "allowed_statuses": ["clarified", "too_broad", "needs_user_authority"]
           }
+        },
+        {
+          "name": "idea_intake_stage_quality",
+          "command": ["{python}", "checks/check_research_checklist.py"],
+          "severity": "error",
+          "config": {
+            "path": "research/ai-ie/idea_brief.md",
+            "checklist": "checklists/research/stage/idea_intake.md",
+            "aspect": "idea_intake_stage_quality",
+            "reasoning_effort": "medium"
+          }
         }
       ],
       "transitions": [
@@ -136,6 +147,17 @@
             "path": "research/ai-ie/knowledge_map.md",
             "allowed_statuses": ["searching", "mapped", "partial_coverage", "blocked", "stale"]
           }
+        },
+        {
+          "name": "world_map_stage_quality",
+          "command": ["{python}", "checks/check_research_checklist.py"],
+          "severity": "error",
+          "config": {
+            "path": "research/ai-ie/knowledge_map.md",
+            "checklist": "checklists/research/stage/world_knowledge_map.md",
+            "aspect": "world_knowledge_map_stage_quality",
+            "reasoning_effort": "medium"
+          }
         }
       ],
       "transitions": [
@@ -204,6 +226,28 @@
           "config": {
             "path": "research/ai-ie/insight_direction.md",
             "allowed_statuses": ["candidate", "promising", "weak", "derivative", "no_delta", "blocked"]
+          }
+        },
+        {
+          "name": "insight_direction_stage_quality",
+          "command": ["{python}", "checks/check_research_checklist.py"],
+          "severity": "error",
+          "config": {
+            "path": "research/ai-ie/insight_direction.md",
+            "checklist": "checklists/research/stage/insight_direction_discovery.md",
+            "aspect": "insight_direction_stage_quality",
+            "reasoning_effort": "medium"
+          }
+        },
+        {
+          "name": "insight_direction_deep_quality",
+          "command": ["{python}", "checks/check_research_checklist.py"],
+          "severity": "error",
+          "config": {
+            "path": "research/ai-ie/insight_direction.md",
+            "checklist": "checklists/research/deep/insight_direction_quality.md",
+            "aspect": "insight_direction_deep_quality",
+            "reasoning_effort": "high"
           }
         }
       ],
@@ -287,6 +331,28 @@
             "path": "research/ai-ie/research_design.md",
             "allowed_statuses": ["designed", "evidence_needed", "data_needed", "method_uncertain", "infeasible", "ready_for_data"]
           }
+        },
+        {
+          "name": "research_design_stage_quality",
+          "command": ["{python}", "checks/check_research_checklist.py"],
+          "severity": "error",
+          "config": {
+            "path": "research/ai-ie/research_design.md",
+            "checklist": "checklists/research/stage/research_design.md",
+            "aspect": "research_design_stage_quality",
+            "reasoning_effort": "medium"
+          }
+        },
+        {
+          "name": "research_design_deep_quality",
+          "command": ["{python}", "checks/check_research_checklist.py"],
+          "severity": "error",
+          "config": {
+            "path": "research/ai-ie/research_design.md",
+            "checklist": "checklists/research/deep/research_design_quality.md",
+            "aspect": "research_design_deep_quality",
+            "reasoning_effort": "high"
+          }
         }
       ],
       "transitions": [
@@ -353,6 +419,28 @@
           "config": {
             "path": "research/ai-ie/data_acquisition.md",
             "allowed_statuses": ["searching", "acquired", "substitute_found", "insufficient", "biased", "permission_blocked", "infeasible"]
+          }
+        },
+        {
+          "name": "data_acquisition_stage_quality",
+          "command": ["{python}", "checks/check_research_checklist.py"],
+          "severity": "error",
+          "config": {
+            "path": "research/ai-ie/data_acquisition.md",
+            "checklist": "checklists/research/stage/data_acquisition.md",
+            "aspect": "data_acquisition_stage_quality",
+            "reasoning_effort": "medium"
+          }
+        },
+        {
+          "name": "data_acquisition_deep_quality",
+          "command": ["{python}", "checks/check_research_checklist.py"],
+          "severity": "error",
+          "config": {
+            "path": "research/ai-ie/data_acquisition.md",
+            "checklist": "checklists/research/deep/data_quality.md",
+            "aspect": "data_acquisition_deep_quality",
+            "reasoning_effort": "high"
           }
         }
       ],
@@ -425,6 +513,28 @@
             "path": "research/ai-ie/analysis_findings.md",
             "allowed_statuses": ["running", "produced", "robust", "surprising", "null", "noisy", "weak", "failed"]
           }
+        },
+        {
+          "name": "analysis_stage_quality",
+          "command": ["{python}", "checks/check_research_checklist.py"],
+          "severity": "error",
+          "config": {
+            "path": "research/ai-ie/analysis_findings.md",
+            "checklist": "checklists/research/stage/analysis.md",
+            "aspect": "analysis_stage_quality",
+            "reasoning_effort": "medium"
+          }
+        },
+        {
+          "name": "analysis_deep_quality",
+          "command": ["{python}", "checks/check_research_checklist.py"],
+          "severity": "error",
+          "config": {
+            "path": "research/ai-ie/analysis_findings.md",
+            "checklist": "checklists/research/deep/analysis_quality.md",
+            "aspect": "analysis_deep_quality",
+            "reasoning_effort": "high"
+          }
         }
       ],
       "transitions": [
@@ -495,6 +605,28 @@
           "config": {
             "path": "research/ai-ie/insight_verification.md",
             "allowed_statuses": ["confirmed_insight", "weak", "already_known", "derivative", "no_delta", "contradicted", "blocked"]
+          }
+        },
+        {
+          "name": "insight_verification_stage_quality",
+          "command": ["{python}", "checks/check_research_checklist.py"],
+          "severity": "error",
+          "config": {
+            "path": "research/ai-ie/insight_verification.md",
+            "checklist": "checklists/research/stage/insight_verification.md",
+            "aspect": "insight_verification_stage_quality",
+            "reasoning_effort": "medium"
+          }
+        },
+        {
+          "name": "insight_verification_deep_quality",
+          "command": ["{python}", "checks/check_research_checklist.py"],
+          "severity": "error",
+          "config": {
+            "path": "research/ai-ie/insight_verification.md",
+            "checklist": "checklists/research/deep/insight_verification_quality.md",
+            "aspect": "insight_verification_deep_quality",
+            "reasoning_effort": "high"
           }
         }
       ],
@@ -582,6 +714,17 @@
             "path": "research/ai-ie/results_architecture.md",
             "allowed_statuses": ["admitted", "repair_needed", "blocked"]
           }
+        },
+        {
+          "name": "results_architecture_stage_quality",
+          "command": ["{python}", "checks/check_research_checklist.py"],
+          "severity": "error",
+          "config": {
+            "path": "research/ai-ie/results_architecture.md",
+            "checklist": "checklists/research/stage/results_architecture.md",
+            "aspect": "results_architecture_stage_quality",
+            "reasoning_effort": "medium"
+          }
         }
       ],
       "transitions": [
@@ -657,6 +800,17 @@
             "path": "research/ai-ie/manuscript.md",
             "allowed_statuses": ["drafting", "figures_synced", "needs_repair", "blocked"]
           }
+        },
+        {
+          "name": "manuscript_argument_deep_quality",
+          "command": ["{python}", "checks/check_research_checklist.py"],
+          "severity": "error",
+          "config": {
+            "path": "research/ai-ie/manuscript.md",
+            "checklist": "checklists/research/deep/manuscript_argument_quality.md",
+            "aspect": "manuscript_argument_deep_quality",
+            "reasoning_effort": "high"
+          }
         }
       ],
       "transitions": [
@@ -714,6 +868,17 @@
           "config": {
             "path": "research/ai-ie/reader_evidence_audit.md",
             "allowed_statuses": ["pending", "passed", "needs_repair", "blocked"]
+          }
+        },
+        {
+          "name": "reader_audit_stage_quality",
+          "command": ["{python}", "checks/check_research_checklist.py"],
+          "severity": "error",
+          "config": {
+            "path": "research/ai-ie/reader_evidence_audit.md",
+            "checklist": "checklists/research/stage/reader_evidence_audit.md",
+            "aspect": "reader_evidence_audit_stage_quality",
+            "reasoning_effort": "medium"
           }
         }
       ],
@@ -775,6 +940,17 @@
           "config": {
             "path": "research/ai-ie/submission_package.md",
             "allowed_statuses": ["package_ready", "waiting_user_authority", "submitted_ready", "blocked"]
+          }
+        },
+        {
+          "name": "submission_package_stage_quality",
+          "command": ["{python}", "checks/check_research_checklist.py"],
+          "severity": "error",
+          "config": {
+            "path": "research/ai-ie/submission_package.md",
+            "checklist": "checklists/research/stage/submission_package.md",
+            "aspect": "submission_package_stage_quality",
+            "reasoning_effort": "medium"
           }
         }
       ],

@@ -107,14 +107,23 @@ agent-harness view research-latest --report-dir reports/research-workflow --fail
 
 ## 验收面
 
-workflow 使用两个确定性 check 脚本：
+workflow 使用三层 gate：
+
+| 层级 | 目的 | 实现 |
+| --- | --- | --- |
+| Structure | 确认 active artifact 存在、必需标题齐全，并达到最低内容量。 | `check_markdown_sections.py` |
+| Stage semantics | 判断阶段是否真的完成，`Status:` 是否有证据支撑。 | `check_research_checklist.py` + `checklists/research/stage/*.md` |
+| Deep research quality | 检查研究对象建模、真实信息增量、方法-claim 匹配、数据来源可复现性、证据边界、反解释和主文承载力。 | `check_research_checklist.py` + `checklists/research/deep/*.md` |
+
+workflow 使用这些 check 脚本：
 
 | Check | 作用 | 要求来源 |
 | --- | --- | --- |
 | `check_markdown_sections.py` | 检查当前 Markdown artifact 是否存在、是否包含必需标题、内容是否达到最低信息量。 | `workflows/ai-ie-research.json` |
 | `check_research_status.py` | 读取 artifact 中的 `Status: <value>`，并把它作为 `metadata.status` 提供给 transition 条件。 | `workflows/ai-ie-research.json` |
+| `check_research_checklist.py` | 调用本地 `codex exec` 填写 Markdown checklist，再把 checked/unchecked items 解析成 harness JSON。 | `checklists/research/` |
 
-workflow graph 负责路由。check 脚本保持窄而确定。
+workflow graph 负责路由。结构和状态检查是确定性的。Checklist checks 是语义质量 gate；只有做 deterministic-only 调试时才设置 `AGENT_HARNESS_ENABLE_LLM=0`。
 
 ## 项目结构
 
@@ -128,6 +137,11 @@ AGENTS.md                            Codex 项目级操作说明。
 checks/
   check_markdown_sections.py         Markdown artifact 结构检查。
   check_research_status.py           workflow 路由状态检查。
+  check_research_checklist.py        Markdown checklist 语义/深层质量 gate。
+  local_codex_judge.py               本地 Codex checklist judge helper。
+checklists/
+  research/stage/                    阶段完成度 checklist 模板。
+  research/deep/                     深层研究质量 checklist 模板。
 workflows/
   ai-ie-research.json                研究 workflow graph。
 research/
@@ -144,7 +158,7 @@ reports/
 
 ## 设计说明
 
-- 示例把领域逻辑留在 workspace：workflow spec、artifact contract 和 check scripts。
+- 示例把领域逻辑留在 workspace：workflow spec、artifact contract、checklists 和 check scripts。
 - CLI 负责状态控制、验收、报告、transition 应用和 hook JSON。
 - Stop hook 在 workflow 到达 `research_complete` 之前始终返回 `decision: "block"`。
-- 示例无额外依赖，check 脚本只使用 Python 标准库。
+- check 脚本只使用 Python 标准库。语义/深层质量 gate 需要本地 Codex CLI，因为会调用 `codex exec`。

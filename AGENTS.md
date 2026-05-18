@@ -41,6 +41,21 @@ For each active workflow node:
 6. Do not advance by optimism. If evidence is weak, incomplete, blocked, or
    already known, use the status that routes back for repair.
 
+The workflow has three gate layers:
+
+- structure: artifact exists, required headings are present, and minimum
+  substantive length is met;
+- stage semantics: Markdown checklist judge verifies the stage is genuinely
+  complete and the status is justified;
+- deep quality: critical gates check research-object modeling, true information
+  delta, method-claim match, data provenance, evidence boundaries, alternative
+  explanations, and manuscript argument carrying capacity.
+
+Content quality checks use local `codex exec` to fill Markdown checklists, then
+the check script parses the checklist into harness JSON. For deterministic-only
+debugging, set `AGENT_HARNESS_ENABLE_LLM=0`; do not use that setting for normal
+research validation.
+
 The research rule is strict:
 
 ```text

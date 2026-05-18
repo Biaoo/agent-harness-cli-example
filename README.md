@@ -74,8 +74,7 @@ That script calls:
 agent-harness step --task workflows/ai-ie-research.json --report-id research-latest --hook-json
 ```
 
-During local development, the hook automatically uses the sibling checkout at
-`agent-harness` if it is installed, otherwise it falls back to:
+The hook uses `agent-harness` if it is installed. Otherwise it falls back to:
 
 ```bash
 uvx --from agent-harness-cli==0.1.2 agent-harness
@@ -116,14 +115,25 @@ agent-harness view research-latest --report-dir reports/research-workflow --fail
 
 ## Acceptance Surface
 
-The workflow uses two deterministic check scripts:
+The workflow uses three layers of gates:
+
+| Layer | Purpose | Implementation |
+| --- | --- | --- |
+| Structure | Ensure the active artifact exists, has required headings, and has enough substance to inspect. | `check_markdown_sections.py` |
+| Stage semantics | Verify that the stage is genuinely complete and the chosen `Status:` is justified. | `check_research_checklist.py` + `checklists/research/stage/*.md` |
+| Deep research quality | Check research-object modeling, true information delta, method-claim match, data provenance, evidence boundaries, alternative explanations, and manuscript argument quality. | `check_research_checklist.py` + `checklists/research/deep/*.md` |
+
+The workflow uses these check scripts:
 
 | Check | Purpose | Source of truth |
 | --- | --- | --- |
 | `check_markdown_sections.py` | Verifies that the active Markdown artifact exists, has required headings, and is substantive enough for that node. | `workflows/ai-ie-research.json` |
 | `check_research_status.py` | Reads the artifact's `Status: <value>` line and exposes it as `metadata.status` for transition conditions. | `workflows/ai-ie-research.json` |
+| `check_research_checklist.py` | Calls local `codex exec` to fill a Markdown checklist, then parses checked/unchecked items into harness JSON. | `checklists/research/` |
 
-The workflow graph owns routing. The check scripts stay narrow and deterministic.
+The workflow graph owns routing. Structure and status checks are deterministic.
+Checklist checks are semantic quality gates; set `AGENT_HARNESS_ENABLE_LLM=0`
+only for deterministic-only debugging.
 
 ## Project Layout
 
@@ -137,6 +147,11 @@ AGENTS.md                            Project instructions for Codex.
 checks/
   check_markdown_sections.py         Markdown artifact structure check.
   check_research_status.py           Workflow routing status check.
+  check_research_checklist.py        Markdown checklist semantic/deep gate.
+  local_codex_judge.py               Local Codex checklist judge helper.
+checklists/
+  research/stage/                    Stage completion checklist templates.
+  research/deep/                     Deep research quality checklist templates.
 workflows/
   ai-ie-research.json                Research workflow graph.
 research/
@@ -154,9 +169,10 @@ reports/
 ## Design Notes
 
 - The example keeps domain logic in the workspace: workflow spec, artifact
-  contracts, and check scripts.
+  contracts, checklists, and check scripts.
 - The CLI supplies state control, validation, reports, transition application,
   and hook JSON.
 - The Stop hook returns `decision: "block"` until the research workflow reaches
   `research_complete`.
-- The example is dependency-free and uses only Python standard library checks.
+- Check scripts use the Python standard library. Semantic/deep gates require a
+  usable local Codex CLI because they call `codex exec`.
