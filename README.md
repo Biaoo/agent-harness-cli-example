@@ -166,7 +166,7 @@ under `research/<topic_slug>/`.
 ```text
 AGENTS.md                            Project instructions for Codex.
 .agents/
-  skills/harness-workflow-runner/    Project-level workflow runner skill.
+  skills/research-workflow-runner/   Project-level research workflow skill.
 .codex/
   hooks.json                         Project-level Stop hook config.
   hooks/run-agent-harness-check.sh   Workflow Stop hook entry point.

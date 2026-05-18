@@ -1,9 +1,14 @@
 ---
-name: harness-workflow-runner
-description: Use when running this repository's Research Agent Harness workflow from a user research idea, producing active-node artifacts, handling step/options/choose/approve/reject, and continuing until research_complete.
+name: research-workflow-runner
+description: Use when running this example repository's research workflow from a user research idea, producing active-node artifacts, handling step/options/choose/approve/reject, and continuing until research_complete.
 ---
 
-# Harness Workflow Runner
+# Research Workflow Runner
+
+This is a project-level skill for the example repository's research workflow. It
+is intentionally domain-specific. The reusable `agent-harness-cli` skill named
+`harness-workflow-runner` remains generic and should be used for arbitrary
+workflow-controller projects.
 
 This repository has one workflow:
 

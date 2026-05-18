@@ -24,7 +24,7 @@ Use this repository's workflow contract automatically.
 - State path: `.agent-harness/research-state.json`
 - Report directory: `reports/research`
 - Stop hook: `.codex/hooks/run-agent-harness-check.sh`
-- Project skill: `.agents/skills/harness-workflow-runner/SKILL.md`
+- Project skill: `.agents/skills/research-workflow-runner/SKILL.md`
 
 If workflow state exists, continue from the current active node. If no state
 exists, start at `research_context`.

@@ -155,7 +155,7 @@ workflow graph 负责路由。结构和状态检查是确定性的。Checklist c
 ```text
 AGENTS.md                            Codex 项目级操作说明。
 .agents/
-  skills/harness-workflow-runner/    项目级 workflow runner skill。
+  skills/research-workflow-runner/   项目级 research workflow skill。
 .codex/
   hooks.json                         项目级 Stop hook 配置。
   hooks/run-agent-harness-check.sh   workflow Stop hook 入口。
